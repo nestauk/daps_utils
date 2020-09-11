@@ -1,10 +1,10 @@
 from setuptools import setup
 from setuptools import find_namespace_packages
-from daps_utils import __version__
+from daps_utils import __version__, __basedir__
 
 version = ''.join(v for v in __version__ if (v.isnumeric() or v == '.'))
 
-with open('requirements.txt') as f:
+with open(f'{__basedir__}/requirements.txt') as f:
     required = f.read().splitlines()
 
 exclude = ['docs', 'tests*']

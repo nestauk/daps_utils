@@ -13,5 +13,9 @@ if [ "$#" -ne 1 ] || ! [ -d "$1" ]; then
   exit 1
 fi
 cd $1
+
+# Create the config directory
 CreateConfig
 echo "${1}/config/metaflowtask/ has been created or updated, with a Dockerfile, Dockerfile-base and launch.sh"
+
+# Copy the __initplus__.py file
