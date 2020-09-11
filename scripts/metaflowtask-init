@@ -1,0 +1,17 @@
+#!/usr/bin/env bash
+
+function CreateConfig(){
+    mkdir -p config/metaflowtask &> /dev/null
+    DU_BASEDIR=$(python -c "import daps_utils; print(daps_utils.__basedir__)")
+    cp ${DU_BASEDIR}/config/metaflowtask/* config/metaflowtask/
+}
+
+
+# Navigate to the specified directory
+if [ "$#" -ne 1 ] || ! [ -d "$1" ]; then
+  echo "Usage: $0 LOCAL_REPO_NAME" >&2
+  exit 1
+fi
+cd $1
+CreateConfig
+echo "${1}/config/metaflowtask/ has been created or updated, with a Dockerfile, Dockerfile-base and launch.sh"
