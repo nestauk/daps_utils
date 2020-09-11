@@ -1,0 +1,2 @@
+include daps_utils/VERSION
+recursive-include daps_utils/config/ *

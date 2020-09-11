@@ -1,3 +1,7 @@
+###########################################################
+### Automatically added by daps-utils metaflowtask-init ###
+###########################################################
+
 def path_to_init(_file=__file__, cast_to_str=False):
     """Return the path to this file"""
     from pathlib import Path
