@@ -2,16 +2,17 @@ from setuptools import setup
 from setuptools import find_namespace_packages
 from daps_utils import __version__
 
+version = ''.join(v for v in __version__ if (v.isnumeric() or v == '.'))
 
 with open('requirements.txt') as f:
     required = f.read().splitlines()
 
 exclude = ['docs', 'tests*']
 common_kwargs = dict(
-    version=__version__,
+    version=version,
     license='MIT',
     install_requires=required,
-    long_description=open('README.rst').read(),
+    long_description=open('README.md').read(),
     url='https://github.com/nestauk/daps_utils',
     author='nesta',
     author_email='software_development@nesta.org.uk',
