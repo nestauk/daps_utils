@@ -59,6 +59,6 @@ def load_config():
     return recursive_load(path_to_config)
 
 
-#__version__ = load_current_version()
+__version__ = load_current_version()
 config = load_config()
 __basedir__ = path_to_init(cast_to_str=True)
