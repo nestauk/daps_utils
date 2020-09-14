@@ -1,10 +1,9 @@
 #!/usr/bin/env bash
 
 set -e
-set -x
 
 function AddCalVerHook(){
-    mkdir .githooks &> /dev/null || exit 0
+    mkdir .githooks &> /dev/null || echo ".githooks already exists"
     touch .githooks/pre-commit
     # Don't append text if it already exists
     DU_MSG="### Text automatically added by daps-utils calver-init ###"
