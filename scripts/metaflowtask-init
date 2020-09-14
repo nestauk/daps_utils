@@ -1,9 +1,21 @@
 #!/usr/bin/env bash
 
+set -e
+
 function CreateConfig(){
     mkdir -p config/metaflowtask &> /dev/null
     DU_BASEDIR=$(python -c "import daps_utils; print(daps_utils.__basedir__)")
     cp ${DU_BASEDIR}/config/metaflowtask/* config/metaflowtask/
+}
+
+function CopyInitPlus(){
+    touch __init__.py
+    DU_BASEDIR=$(python -c "import daps_utils; print(daps_utils.__basedir__)")
+    cp ${DU_BASEDIR}/__initplus__.py .
+    echo '################################################################' >> __init__.py
+    echo '### Text automatically added by daps-utils metaflowtask-init ###' >> __init__.py
+    echo 'from .__initplus__ import path_to_init, __basedir__, config' >> __init__.py
+    echo '################################################################' >> __init__.py
 }
 
 
@@ -13,5 +25,11 @@ if [ "$#" -ne 1 ] || ! [ -d "$1" ]; then
   exit 1
 fi
 cd $1
+
+# Create the config directory
 CreateConfig
 echo "${1}/config/metaflowtask/ has been created or updated, with a Dockerfile, Dockerfile-base and launch.sh"
+
+# Copy the __initplus__.py file
+CopyInitPlus
+echo "${1}/__init__.py and ${1}/__initplus__.py have been created or updated."
