@@ -60,33 +60,31 @@ This assumes you have already repository structure like this:
 
 ```bash
 .
-├── REPONAME     # <--- Call `metaflowtask-init <REPONAME>` from here
-│   ├── REPONAME
-│   │   └── [...]
-│   └── [...]
-└── [...]
+└── REPONAME     # <--- Call `metaflowtask-init <REPONAME>` from here
+    ├── REPONAME
+    │   └── [...]
+    └── [...]
 ```
 
 and will result in a directory structure like this:
 
 ```bash
 .
-├── REPONAME
-│   ├── REPONAME
-│   │   ├── __init__.py
-│   │   ├── __initplus__.py
-│   │   ├── config
-│   │   │   └── metaflowtask
-│   │   │       ├── Dockerfile-base
-│   │   │       ├── Dockerfile
-│   │   │       └── launch.sh
-│   │   ├── flows
-│   │   │   └── example
-│   │   │       ├── requirements.txt
-│   │   │       └── s3_example.py
-│   │   └── [...]
-│   └── [...]
-└── [...]
+└── REPONAME
+    ├── REPONAME
+    │   ├── __init__.py
+    │   ├── __initplus__.py
+    │   ├── config
+    │   │   └── metaflowtask
+    │   │       ├── Dockerfile-base
+    │   │       ├── Dockerfile
+    │   │       └── launch.sh
+    │   ├── flows
+    │   │   └── example
+    │   │       ├── requirements.txt
+    │   │       └── s3_example.py
+    │   └── [...]
+    └── [...]
 ```
 
 Don't worry if you already have an `__init__.py` file - it will only be amended, not overwritten.
@@ -152,20 +150,19 @@ That's your design choice, but our production directory structure is like:
 
 ```bash
 .
-├── REPONAME
-│   ├── REPONAME
-│   │   ├── flows
-│   │   │   └── example
-│   │   │   │   ├── requirements.txt
-│   │   │   │   └── s3_example.py
-│   │   │   └── another_example
-│   │   │       ├── requirements.txt
-│   │   │       └── batch_example.py
-│   │   ├── tasks
-│   │   │   └── all_examples
-│   │   │       └── all_example_tasks.py
-│   └── [...]
-└── [...]
+└── REPONAME
+    ├── REPONAME
+    │   ├── flows
+    │   │   └── example
+    │   │   │   ├── requirements.txt
+    │   │   │   └── s3_example.py
+    │   │   └── another_example
+    │   │       ├── requirements.txt
+    │   │       └── batch_example.py
+    │   └── tasks
+    │       └── all_examples
+    │           └── all_example_tasks.py
+    └── [...]
 ```
 
 
