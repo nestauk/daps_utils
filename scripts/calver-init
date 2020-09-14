@@ -9,7 +9,7 @@ function AddCalVerHook(){
     DU_MSG="### Text automatically added by daps-utils calver-init ###"
     if grep -Fxq "${DU_MSG}" .githooks/pre-commit &> /dev/null
     then
-	echo -e "\ERROR: 'calver-init' has already been called. Manually remove previous edit by 'calver-init' from '.githooks/pre-commit' (i.e. the text between the long comment blocks), and then try again.\n" >&2
+	echo -e "ERROR: 'calver-init' has already been called. Manually remove previous edit by 'calver-init' from '.githooks/pre-commit' (i.e. the text between the long comment blocks), and then try again.\n" >&2
 	exit 1
     fi
     echo '################################################################' >> .githooks/pre-commit
