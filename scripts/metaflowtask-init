@@ -51,7 +51,7 @@ fi
 # Set up calendar versioning
 calver-init
 # Check it all adds up
-if [ "${PWD##*/" != ${DU_LOCAL_REPO_NAME} ]; then
+if [ "${PWD##*/}" != "${DU_LOCAL_REPO_NAME}" ]; then
     echo "ERROR: Your repository and package must have the same name, i.e. '$DU_LOCAL_REPO_NAME/$DU_LOCAL_REPO_NAME' does not exist, where '$DU_LOCAL_REPO_NAME' should be the name of this local directory, not '${PWD##*/}'." >&2
     exit 1
 fi
