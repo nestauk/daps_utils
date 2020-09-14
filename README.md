@@ -1,6 +1,15 @@
 daps_utils
 ==========
 
+* [Installation](installation)
+* [MetaflowTask](metaflowtask)
+  * [Why run `metaflow` in `luigi`?](why-run-metaflow-in-luigi)
+  * [First-time usage](#first-time-usage)
+  * [Usage](#usage)
+  * [Where should my `luigi` tasks live?](where-should-my-luigi-tasks-live)
+* [For contributors](for-contributors)
+
+
 Installation
 ============
 
@@ -44,7 +53,7 @@ In order to use `MetaflowTask`, you will need to have your repository set up acc
 After installing `daps-utils`, the following command will do this for you:
 
 ```bash
-metaflowtask-init <REPONAME>
+$ metaflowtask-init <REPONAME>
 ```
 
 This assumes you have already repository structure like this:
@@ -96,7 +105,7 @@ locally with:
 python s3_example.py run
 ```
 
-Look inside, `s3_example.py` and note the usage of the `@talk_to_luigi` class decorator. This is critical for your
+Look inside `s3_example.py` and note the usage of the `@talk_to_luigi` class decorator. This is critical for your
 `metaflow` flow to talk with your `luigi` task. There are only a small number of requirements for your flow to run via `MetaflowTask`:
 
 - Firstly, make sure you are using the `@talk_to_luigi` class decorator on your flow.
