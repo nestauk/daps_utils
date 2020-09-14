@@ -4,7 +4,7 @@ set -e
 set -x
 
 function AddCalVerHook(){
-    mkdir .githooks &> /dev/null 
+    mkdir .githooks &> /dev/null || exit 0
     touch .githooks/pre-commit
     # Don't append text if it already exists
     DU_MSG="### Text automatically added by daps-utils calver-init ###"
