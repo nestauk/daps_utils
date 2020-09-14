@@ -59,6 +59,10 @@ if ! [ -d ".git" ]; then
     echo "This is not a git repository. Run 'git init' first." >&2
     exit 1
 fi
+if ! [ -d "${PWD##*/}" ]; then
+    mkdir ${PWD##*/}
+fi
 
 AddCalVerHook
 AddInstallFile
+echo "You can now inspect your Calendar Version from ${PWD##*/}/VERSION"
