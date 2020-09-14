@@ -47,5 +47,15 @@ function AddInstallFile(){
     echo ".githooks/pre-commit is now active. Anyone cloning this repository will have to call 'bash install.sh' from the project root in order to activate Calendar Versioning."    
 }
 
+
+if [ "$#" -ne 0 ]; then
+    echo "Usage: $0" >&2    
+    exit 1
+fi
+if ! [ -d ".git" ]; then
+    echo "This is not a git repository. Run 'git init' first." >&2
+    exit 1
+fi
+
 AddCalVerHook
 AddInstallFile
