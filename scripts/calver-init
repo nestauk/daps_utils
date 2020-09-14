@@ -3,7 +3,7 @@
 set -e
 
 function AddCalVerHook(){
-    mkdir .githooks &> /dev/null
+    mkdir .githooks &> /dev/null 
     touch .githooks/pre-commit
     # Don't append text if it already exists
     DU_MSG="### Text automatically added by daps-utils calver-init ###"
@@ -33,17 +33,18 @@ function AddInstallFile(){
     DU_MSG="### Text automatically added by daps-utils calver-init ###"
     if grep -Fxq "${DU_MSG}" install.sh &> /dev/null
     then
-	echo -e "\ERROR: 'calver-init' has already been called. Manually remove previous edit by 'calver-init' from 'install.sh' (i.e. the text between the long comment blocks), and then try again.\n" >&2
+	echo -e "\ERROR: 'calver-init' has already been called. Remove 'install.sh' before retrying."
 	exit 1
     fi
+    echo '#!/usr/bin/env bash' >> install.sh
+    echo 'set -e' >> install.sh        
     echo '################################################################' >> install.sh
     echo ${DU_MSG} >> install.sh
-    echo '#!/usr/bin/env bash' >> install.sh
     echo 'chmod +x .githooks/pre-commit' >> install.sh
     echo 'bash .githooks/pre-commit && ln -s $PWD/.githooks/pre-commit .git/hooks/pre-commit || exit 1' >> install.sh
     echo '################################################################' >> install.sh
     echo "install.sh has been created or updated."
-    bash install.sh
+    bash install.sh || exit 1
     echo ".githooks/pre-commit is now active. Anyone cloning this repository will have to call 'bash install.sh' from the project root in order to activate Calendar Versioning."    
 }
 
