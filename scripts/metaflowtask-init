@@ -26,8 +26,8 @@ function CopyInitPlus(){
     DU_MSG="### Text automatically added by daps-utils metaflowtask-init ###"
     if grep -Fxq "${DU_MSG}" __init__.py &> /dev/null
     then
-	echo -e "\nWARNING: not copying or editing __init__.py as `metaflowtask-init` has already been called. Manually remove previous edit by metaflowtask-init (i.e. the text between the long comment blocks), and then try again.\n"
-	exit 0
+	echo -e "\nWARNING: not copying or editing ${1}/__init__.py as 'metaflowtask-init' has already been called. Manually remove previous edit by metaflowtask-init (i.e. the text between the long comment blocks), and then try again.\n" >&2
+	exit 1
     fi
 
     # No problems, so proceed normally
@@ -42,11 +42,12 @@ function CopyInitPlus(){
 
 
 # Navigate to the specified directory
-if [ "$#" -ne 1 ] || ! [ -d "$1" ]; then
+DU_LOCAL_REPO_NAME=${1%/}
+if [ "$#" -ne 1 ] || ! [ -d "$DU_LOCAL_REPO_NAME" ]; then
   echo "Usage: $0 LOCAL_REPO_NAME" >&2
   exit 1
 fi
-cd ${1}
-CreateConfig ${1}
-CreateFlowsDir ${1}
-CopyInitPlus ${1}
+cd ${DU_LOCAL_REPO_NAME}
+CreateConfig ${DU_LOCAL_REPO_NAME}
+CreateFlowsDir ${DU_LOCAL_REPO_NAME}
+CopyInitPlus ${DU_LOCAL_REPO_NAME}
