@@ -10,22 +10,34 @@ function DUtilsBaseDir(){
 function CreateConfig(){
     mkdir -p config/metaflowtask &> /dev/null
     cp $(DUtilsBaseDir)/config/metaflowtask/* config/metaflowtask/
+    echo "${1}/config/metaflowtask/ has been created or updated, with a Dockerfile, Dockerfile-base and launch.sh"    
 }
 
 function CreateFlowsDir(){
-    mkdir -p flows/example &> /dev/null
-    cp $(DUtilsBaseDir)/flows/datasets/example/example_flow.py flows/example/
-    cp $(DUtilsBaseDir)/flows/datasets/example/requirements.txt flows/example/
+    EXAMPLE_DIR=flows/examples/s3_example
+    mkdir -p ${EXAMPLE_DIR} &> /dev/null    
+    cp $(DUtilsBaseDir)/${EXAMPLE_DIR}/s3_example.py ${EXAMPLE_DIR}/
+    echo "${1}/flows/example/ has been created or updated, with an example flow."    
 }
 
 function CopyInitPlus(){
     touch __init__.py
+    # Don't append text if it already exists
+    DU_MSG="### Text automatically added by daps-utils metaflowtask-init ###"
+    if grep -Fxq "${DU_MSG}" __init__.py &> /dev/null
+    then
+	echo -e "\nWARNING: not copying or editing __init__.py as `metaflowtask-init` has already been called. Manually remove previous edit by metaflowtask-init (i.e. the text between the long comment blocks), and then try again.\n"
+	exit 0
+    fi
+
+    # No problems, so proceed normally
     cp $(DUtilsBaseDir)/__initplus__.py .
     echo '################################################################' >> __init__.py
-    echo '### Text automatically added by daps-utils metaflowtask-init ###' >> __init__.py
+    echo ${DU_MSG} >> __init__.py
     echo 'from .__initplus__ import path_to_init, __basedir__, load_config' >> __init__.py
     echo 'config = load_config()' >> __init__.py    
     echo '################################################################' >> __init__.py
+    echo "${1}/__init__.py and ${1}/__initplus__.py have been created or updated."    
 }
 
 
@@ -34,16 +46,7 @@ if [ "$#" -ne 1 ] || ! [ -d "$1" ]; then
   echo "Usage: $0 LOCAL_REPO_NAME" >&2
   exit 1
 fi
-cd $1
-
-# Create the config directory
-CreateConfig
-echo "${1}/config/metaflowtask/ has been created or updated, with a Dockerfile, Dockerfile-base and launch.sh"
-
-# Create the flows directory, with an example
-CreateFlowsDir
-echo "${1}/flows/example/ has been created or updated, with an example flow."
-
-# Copy the __initplus__.py file
-CopyInitPlus
-echo "${1}/__init__.py and ${1}/__initplus__.py have been created or updated."
+cd ${1}
+CreateConfig ${1}
+CreateFlowsDir ${1}
+CopyInitPlus ${1}
