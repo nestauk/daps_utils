@@ -32,5 +32,5 @@ common_kwargs = dict(
 
 setup(name='daps_utils',
       packages=find_namespace_packages(where='.', exclude=exclude),
-      scripts=['scripts/metaflowtask-init'],
+      scripts=['scripts/metaflowtask-init', 'scripts/calver-init'],
       **common_kwargs)

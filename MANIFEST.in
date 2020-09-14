@@ -1,2 +1,5 @@
+include scripts/metaflowtask-init
+include scripts/calver-init
 include daps_utils/VERSION
+recursive-include daps_utils/flows/ *
 recursive-include daps_utils/config/ *

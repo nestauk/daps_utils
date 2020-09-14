@@ -2,34 +2,60 @@
 
 set -e
 
+function DUtilsBaseDir(){
+    DU_BASEDIR=$(python -c "import daps_utils; print(daps_utils.__basedir__)")
+    echo -n $DU_BASEDIR
+}
+
 function CreateConfig(){
     mkdir -p config/metaflowtask &> /dev/null
-    DU_BASEDIR=$(python -c "import daps_utils; print(daps_utils.__basedir__)")
-    cp ${DU_BASEDIR}/config/metaflowtask/* config/metaflowtask/
+    cp $(DUtilsBaseDir)/config/metaflowtask/* config/metaflowtask/
+    echo "${1}/config/metaflowtask/ has been created or updated, with a Dockerfile, Dockerfile-base and launch.sh"    
+}
+
+function CreateFlowsDir(){
+    EXAMPLE_DIR=flows/examples/s3_example
+    mkdir -p ${EXAMPLE_DIR} &> /dev/null    
+    cp $(DUtilsBaseDir)/${EXAMPLE_DIR}/s3_example.py ${EXAMPLE_DIR}/
+    echo "${1}/flows/example/ has been created or updated, with an example flow."    
 }
 
 function CopyInitPlus(){
     touch __init__.py
-    DU_BASEDIR=$(python -c "import daps_utils; print(daps_utils.__basedir__)")
-    cp ${DU_BASEDIR}/__initplus__.py .
+    # Don't append text if it already exists
+    DU_MSG="### Text automatically added by daps-utils metaflowtask-init ###"
+    if grep -Fxq "${DU_MSG}" __init__.py &> /dev/null
+    then
+	echo -e "\nWARNING: not copying or editing ${1}/__init__.py as 'metaflowtask-init' has already been called. Manually remove previous edit by metaflowtask-init (i.e. the text between the long comment blocks), and then try again.\n" >&2
+	exit 1
+    fi
+
+    # No problems, so proceed normally
+    cp $(DUtilsBaseDir)/__initplus__.py .
     echo '################################################################' >> __init__.py
-    echo '### Text automatically added by daps-utils metaflowtask-init ###' >> __init__.py
-    echo 'from .__initplus__ import path_to_init, __basedir__, config' >> __init__.py
+    echo ${DU_MSG} >> __init__.py
+    echo 'from .__initplus__ import load_current_version, __basedir__, load_config' >> __init__.py
+    echo 'config = load_config()' >> __init__.py    
+    echo '__version__ = load_current_version()' >> __init__.py    
     echo '################################################################' >> __init__.py
+    echo "${1}/__init__.py and ${1}/__initplus__.py have been created or updated."    
 }
 
 
 # Navigate to the specified directory
-if [ "$#" -ne 1 ] || ! [ -d "$1" ]; then
+DU_LOCAL_REPO_NAME=${1%/}
+if [ "$#" -ne 1 ] || ! [ -d "$DU_LOCAL_REPO_NAME" ]; then
   echo "Usage: $0 LOCAL_REPO_NAME" >&2
   exit 1
 fi
-cd $1
-
-# Create the config directory
-CreateConfig
-echo "${1}/config/metaflowtask/ has been created or updated, with a Dockerfile, Dockerfile-base and launch.sh"
-
-# Copy the __initplus__.py file
-CopyInitPlus
-echo "${1}/__init__.py and ${1}/__initplus__.py have been created or updated."
+if [ -d "../$DU_LOCAL_REPO_NAME/$DU_LOCAL_REPO_NAME" ]; then
+    echo "ERROR: Your repository and package must have the same name, i.e. '$DU_LOCAL_REPO_NAME/$DU_LOCAL_REPO_NAME' does not exist, where '$DU_LOCAL_REPO_NAME' should be the name of this local directory, not '${PWD##*/}'." >&2
+    exit 1
+fi
+# Set up calendar versioning
+calver-init
+# Set up MetaflowTask structure
+cd ${DU_LOCAL_REPO_NAME}
+CreateConfig ${DU_LOCAL_REPO_NAME}
+CreateFlowsDir ${DU_LOCAL_REPO_NAME}
+CopyInitPlus ${DU_LOCAL_REPO_NAME}

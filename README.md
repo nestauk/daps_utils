@@ -2,6 +2,7 @@ daps_utils
 ==========
 
   * [Installation](#installation)
+  * [Calendar Versioning](#calendar-versioning)  
   * [MetaflowTask](#metaflowtask)
     * [Why run `metaflow` in `luigi`?](#why-run-metaflow-in-luigi)
     * [First-time usage](#first-time-usage)
@@ -15,6 +16,25 @@ Installation
 
 ```bash
 pip install https://github.com/nestauk/daps_utils/archive/dev.zip
+```
+
+Calendar Versioning
+===================
+
+If you need to be convinced why CalVer is right for you (which it might not be), then you can
+find some decent arguments on the [CalVer "homepage"](https://calver.org/). Anyway, the following command line tool will set it up
+on your git repository:
+
+```bash
+$ calver-init
+```
+
+It has one prerequisite: you must be calling `calver-init` from a git repository (i.e. you have called `git init` and then `git commit` at least once).
+
+Whatever the name of your git repo, for example `daps_utils`, your `VERSION` file will be found under a subdirectory of the same name, for example `daps_utils/VERSION`. The versioning scheme adheres to the following pattern:
+
+```python
+YY.MM.DD.{git branch}
 ```
 
 MetaflowTask
@@ -50,7 +70,7 @@ First-time usage
 ----------------
 
 In order to use `MetaflowTask`, you will need to have your repository set up accordingly.
-After installing `daps-utils`, the following command will do this for you:
+After installing `daps-utils`, the following command will do this for you (note that this will also set up [calendar versioning](calendar-versioning)):
 
 ```bash
 $ metaflowtask-init <REPONAME>
@@ -80,9 +100,9 @@ and will result in a directory structure like this:
     │   │       ├── Dockerfile
     │   │       └── launch.sh
     │   ├── flows
-    │   │   └── example
-    │   │       ├── requirements.txt
-    │   │       └── s3_example.py
+    │   │   └── examples
+    │   │       └── s3_example
+    │   │           └── s3_example.py
     │   └── [...]
     └── [...]
 ```
@@ -104,32 +124,42 @@ python s3_example.py run
 ```
 
 Look inside `s3_example.py` and note the usage of the `@talk_to_luigi` class decorator. This is critical for your
-`metaflow` flow to talk with your `luigi` task. There are only a small number of requirements for your flow to run via `MetaflowTask`:
+`metaflow` flow to talk with your `luigi` task:
+
+```python
+from daps_utils import talk_to_luigi
+
+@talk_to_luigi
+class MyFlow(FlowSpec):
+    [...]  # Do something
+```
+
+
+There are only a small number of requirements for your flow to run via `MetaflowTask`:
 
 - Firstly, make sure you are using the `@talk_to_luigi` class decorator on your flow.
-- To use `MetaflowTask`, you will need a `requirements.txt` for your flow's python environment.
-- Take a look at the `docker` environment in `config/metaflowtask` (the base environment is built by `Dockerfile-base`, which is then built on-top-of using `Dockerfile`). If you need your own base environment you should include a `Dockerfile-base` in the flow directory (and also a `Dockerfile`), or just a slight variation you should just include a `Dockerfile` in your flow directory.
+- If your flow has any external dependencies, you will need to include a `requirements.txt` in your flow directory to specify the python environment.
+- If your flow will not run out-of-the-box on Amazon Linux 2, then you'll need to specify your container environemtn. Take a look at the `docker` environment in `config/metaflowtask` (the base environment is built by `Dockerfile-base`, which is then built on-top-of using `Dockerfile`). If you need your own base environment you should include a `Dockerfile-base` in the flow directory (and also a `Dockerfile`), or just a slight variation you should just include a `Dockerfile` in your flow directory.
 - Similarly, if you need the entrypoint / runtime to be more sophisticated than `python path/to/flow.py run`, you can specify custom behaviour by copying and editing the `config/metaflowtask/launch.sh` script to your flow directory.
 
 Therefore, the minimum your flow directory should look like should be:
 
 ```bash
 flows
-└── example
-	├── requirements.txt
-	└── s3_example.py
+└── my_flow_directory
+	└── my_flow.py
 ```
 
 and the maximum your flow directory should look like would be:
 
 ```bash
 flows
-└── example
-	├── Dockerfile-base
-	├── Dockerfile
-	├── launch.sh
-	├── requirements.txt
-	└── s3_example.py
+└── my_flow_directory
+	├── Dockerfile-base   # <-- If you specify this, you will also need to specify "Dockerfile"
+	├── Dockerfile        # <-- Can specify this on it's own, if you're happy with "Dockerfile-base"
+	├── launch.sh         # <-- Can specify this on it's own, if you're happy with "Dockerfile"
+	├── requirements.txt  # <-- Only required if you have external python dependencies
+	└── my_flow.py        # <-- You always need this, this is your flow. Don't forget to use the @talk_to_luigi class decorator
 ```
 
 You can then run add your "`luigi`" `MetaflowTask` as follows:
@@ -140,7 +170,13 @@ from daps_utils import MetaflowTask
 
 class RootTask(luigi.WrapperTask):
 	def requires(self):
-		return MetaflowTask('example/s3_example.py')
+		return MetaflowTask('examples/s3_example/s3_example.py')
+```
+
+which you can run with (optionally with the `--local-scheduler` flag if running locally):
+
+```bash
+luigi --module my_task_name RootTask
 ```
 
 Where should my `luigi` tasks live?
@@ -153,15 +189,16 @@ That's your design choice, but our production directory structure is like:
 └── REPONAME
     ├── REPONAME
     │   ├── flows
-    │   │   └── example
-    │   │   │   ├── requirements.txt
-    │   │   │   └── s3_example.py
-    │   │   └── another_example
-    │   │       ├── requirements.txt
-    │   │       └── batch_example.py
+    │   │   └── examples
+    │   │       ├── s3_example
+    │   │       │   ├── requirements.txt
+    │   │       │   └── s3_example.py
+    │   │       └── batch_example
+    │   │           ├── requirements.txt
+    │   │           └── batch_example.py
     │   └── tasks
-    │       └── all_examples
-    │           └── all_example_tasks.py
+    │       └── examples
+    │           └── examples_tasks.py
     └── [...]
 ```
 

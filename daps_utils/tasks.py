@@ -29,8 +29,7 @@ def import_pkg(daps_pkg):
 def assert_hasattr(pkg, attr, pkg_name):
     if not hasattr(pkg, attr):
         raise AttributeError(f"{pkg_name} is expected to have attribute '{attr}'. "
-                             "Have you run 'daps_utils init' from your package root? "
-                             "(Hint: the root is normally {pkg_name}/{pkg_name}).")
+                             "Have you run 'metaflowtask-init' from your package root?")
 
 
 class _MetaflowTask(luigi.Task):
