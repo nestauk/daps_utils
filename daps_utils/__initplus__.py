@@ -51,4 +51,12 @@ def load_config():
     return recursive_load(path_to_config)
 
 
+def load_current_version():
+    """Load the current version of this package."""
+    path_to_version = path_to_init(__file__) / "VERSION"
+    with open(path_to_version) as f:
+        v = f.read()
+    return v
+
+
 __basedir__ = path_to_init(cast_to_str=True)

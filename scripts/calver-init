@@ -1,0 +1,68 @@
+#!/usr/bin/env bash
+
+set -e
+
+function AddCalVerHook(){
+    mkdir .githooks &> /dev/null 
+    touch .githooks/pre-commit
+    # Don't append text if it already exists
+    DU_MSG="### Text automatically added by daps-utils calver-init ###"
+    if grep -Fxq "${DU_MSG}" .githooks/pre-commit &> /dev/null
+    then
+	echo -e "\ERROR: 'calver-init' has already been called. Manually remove previous edit by 'calver-init' from '.githooks/pre-commit' (i.e. the text between the long comment blocks), and then try again.\n" >&2
+	exit 1
+    fi
+    echo '################################################################' >> .githooks/pre-commit
+    echo ${DU_MSG} >> .githooks/pre-commit
+    echo 'set -e' >> .githooks/pre-commit    
+    echo 'function incrementVersion {' >> .githooks/pre-commit
+    echo '    CALVER=$(date +"%y.%m.%d")' >> .githooks/pre-commit
+    echo '    CURRENT_BRANCH=$(git rev-parse --abbrev-ref HEAD)' >> .githooks/pre-commit
+    echo '    PROJECT_ROOT=${PWD##*/}' >> .githooks/pre-commit
+    echo '    echo -n $CALVER.$CURRENT_BRANCH > ${PROJECT_ROOT}/VERSION' >> .githooks/pre-commit
+    echo '    git add ${PROJECT_ROOT}/VERSION' >> .githooks/pre-commit
+    echo '}' >> .githooks/pre-commit
+    echo 'incrementVersion' >> .githooks/pre-commit
+    echo '################################################################' >> .githooks/pre-commit
+    echo ".githooks/pre-commit has been created or updated."
+}
+
+
+function AddInstallFile(){
+    touch install.sh
+    # Don't append text if it already exists
+    DU_MSG="### Text automatically added by daps-utils calver-init ###"
+    if grep -Fxq "${DU_MSG}" install.sh &> /dev/null
+    then
+	echo -e "\ERROR: 'calver-init' has already been called. Remove 'install.sh' before retrying."
+	exit 1
+    fi
+    echo '#!/usr/bin/env bash' >> install.sh
+    echo 'set -e' >> install.sh        
+    echo '################################################################' >> install.sh
+    echo ${DU_MSG} >> install.sh
+    echo 'chmod +x .githooks/pre-commit' >> install.sh
+    echo 'bash .githooks/pre-commit' >> install.sh
+    echo 'ln -s $PWD/.githooks/pre-commit .git/hooks/pre-commit' >> install.sh
+    echo '################################################################' >> install.sh
+    echo "install.sh has been created or updated."
+    bash install.sh
+    echo ".githooks/pre-commit is now active. Anyone cloning this repository will have to call 'bash install.sh' from the project root in order to activate Calendar Versioning."    
+}
+
+
+if [ "$#" -ne 0 ]; then
+    echo "Usage: $0" >&2    
+    exit 1
+fi
+if ! [ -d ".git" ]; then
+    echo "This is not a git repository. Run 'git init' first." >&2
+    exit 1
+fi
+if ! [ -d "${PWD##*/}" ]; then
+    mkdir ${PWD##*/}
+fi
+
+AddCalVerHook
+AddInstallFile
+echo "You can now inspect your Calendar Version from ${PWD##*/}/VERSION"

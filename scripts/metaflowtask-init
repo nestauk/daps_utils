@@ -34,8 +34,9 @@ function CopyInitPlus(){
     cp $(DUtilsBaseDir)/__initplus__.py .
     echo '################################################################' >> __init__.py
     echo ${DU_MSG} >> __init__.py
-    echo 'from .__initplus__ import path_to_init, __basedir__, load_config' >> __init__.py
+    echo 'from .__initplus__ import load_current_version, __basedir__, load_config' >> __init__.py
     echo 'config = load_config()' >> __init__.py    
+    echo '__version__ = load_current_version()' >> __init__.py    
     echo '################################################################' >> __init__.py
     echo "${1}/__init__.py and ${1}/__initplus__.py have been created or updated."    
 }
@@ -47,6 +48,13 @@ if [ "$#" -ne 1 ] || ! [ -d "$DU_LOCAL_REPO_NAME" ]; then
   echo "Usage: $0 LOCAL_REPO_NAME" >&2
   exit 1
 fi
+if [ -d "../$DU_LOCAL_REPO_NAME/$DU_LOCAL_REPO_NAME" ]; then
+    echo "ERROR: Your repository and package must have the same name, i.e. '$DU_LOCAL_REPO_NAME/$DU_LOCAL_REPO_NAME' does not exist, where '$DU_LOCAL_REPO_NAME' should be the name of this local directory, not '${PWD##*/}'." >&2
+    exit 1
+fi
+# Set up calendar versioning
+calver-init
+# Set up MetaflowTask structure
 cd ${DU_LOCAL_REPO_NAME}
 CreateConfig ${DU_LOCAL_REPO_NAME}
 CreateFlowsDir ${DU_LOCAL_REPO_NAME}
