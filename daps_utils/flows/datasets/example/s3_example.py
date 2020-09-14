@@ -6,14 +6,13 @@ An example Flow for writing to S3. This flow is also used
 as a good example for it's interacting with MetaflowTask.
 """
 
-from daps_utils import drop_breadcrumb
+from daps_utils import talk_to_luigi
 from metaflow import FlowSpec, step, S3
 from metaflow import Parameter
 import json
-import nuts_finder  # <--- just to show that the Docker env is working
 
 
-@drop_breadcrumb
+@talk_to_luigi
 class S3DemoFlow(FlowSpec):
     filename = Parameter('filename',
                          help='The filename',
