@@ -142,7 +142,7 @@ flows
 	└── my_flow.py        # <-- You always need this, this is your flow. Don't forget to use the @talk_to_luigi class decorator
 ```
 
-You can then run add your "`luigi`" `MetaflowTask` as follows:
+You can then run add your "`luigi`" `MetaflowTask` as follows, noting your repository name to replace `REPO_NAME`:
 
 ```python
 import luigi
@@ -150,7 +150,7 @@ from daps_utils import MetaflowTask
 
 class RootTask(luigi.WrapperTask):
 	def requires(self):
-		return MetaflowTask('examples/s3_example/s3_example.py')
+		return MetaflowTask('examples/s3_example/s3_example.py', daps_pkg="REPO_NAME")
 ```
 
 which you can run with (optionally with the `--local-scheduler` flag if running locally):
