@@ -41,7 +41,7 @@ CreateConfig
 echo "${1}/config/metaflowtask/ has been created or updated, with a Dockerfile, Dockerfile-base and launch.sh"
 
 # Create the flows directory, with an example
-CreateFlowDir
+CreateFlowsDir
 echo "${1}/flows/example/ has been created or updated, with an example flow."
 
 # Copy the __initplus__.py file
