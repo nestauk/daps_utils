@@ -1,13 +1,13 @@
 daps_utils
 ==========
 
-* [Installation](installation)
-* [MetaflowTask](metaflowtask)
-  * [Why run `metaflow` in `luigi`?](why-run-metaflow-in-luigi)
-  * [First-time usage](#first-time-usage)
-  * [Usage](#usage)
-  * [Where should my `luigi` tasks live?](where-should-my-luigi-tasks-live)
-* [For contributors](for-contributors)
+  * [Installation](#installation)
+  * [MetaflowTask](#metaflowtask)
+    * [Why run `metaflow` in `luigi`?](#why-run-metaflow-in-luigi)
+    * [First-time usage](#first-time-usage)
+    * [Usage](#usage)
+    * [Where should my `luigi` tasks live?](#where-should-my-luigi-tasks-live)
+  * [For contributors](#for-contributors)
 
 
 Installation
