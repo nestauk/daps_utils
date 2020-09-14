@@ -2,19 +2,29 @@
 
 set -e
 
+function DUtilsBaseDir(){
+    DU_BASEDIR=$(python -c "import daps_utils; print(daps_utils.__basedir__)")
+    echo -n $DU_BASEDIR
+}
+
 function CreateConfig(){
     mkdir -p config/metaflowtask &> /dev/null
-    DU_BASEDIR=$(python -c "import daps_utils; print(daps_utils.__basedir__)")
-    cp ${DU_BASEDIR}/config/metaflowtask/* config/metaflowtask/
+    cp $(DUtilsBaseDir)/config/metaflowtask/* config/metaflowtask/
+}
+
+function CreateFlowsDir(){
+    mkdir -p flows/example &> /dev/null
+    cp $(DUtilsBaseDir)/flows/datasets/example/example_flow.py flows/example/
+    cp $(DUtilsBaseDir)/flows/datasets/example/requirements.txt flows/example/
 }
 
 function CopyInitPlus(){
     touch __init__.py
-    DU_BASEDIR=$(python -c "import daps_utils; print(daps_utils.__basedir__)")
-    cp ${DU_BASEDIR}/__initplus__.py .
+    cp $(DUtilsBaseDir)/__initplus__.py .
     echo '################################################################' >> __init__.py
     echo '### Text automatically added by daps-utils metaflowtask-init ###' >> __init__.py
-    echo 'from .__initplus__ import path_to_init, __basedir__, config' >> __init__.py
+    echo 'from .__initplus__ import path_to_init, __basedir__, load_config' >> __init__.py
+    echo 'config = load_config()' >> __init__.py    
     echo '################################################################' >> __init__.py
 }
 
@@ -29,6 +39,10 @@ cd $1
 # Create the config directory
 CreateConfig
 echo "${1}/config/metaflowtask/ has been created or updated, with a Dockerfile, Dockerfile-base and launch.sh"
+
+# Create the flows directory, with an example
+CreateFlowDir
+echo "${1}/flows/example/ has been created or updated, with an example flow."
 
 # Copy the __initplus__.py file
 CopyInitPlus

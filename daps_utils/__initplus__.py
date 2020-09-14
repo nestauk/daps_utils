@@ -51,5 +51,4 @@ def load_config():
     return recursive_load(path_to_config)
 
 
-config = load_config()
 __basedir__ = path_to_init(cast_to_str=True)
