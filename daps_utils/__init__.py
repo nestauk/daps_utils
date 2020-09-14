@@ -1,5 +1,8 @@
-from .breadcrumbs import drop_breadcrumb
-from .tasks import _MetaflowTask, MetaflowTask
+try:
+    from .breadcrumbs import drop_breadcrumb
+    from .tasks import _MetaflowTask, MetaflowTask
+except ModuleNotFoundError:  # For integration with setup.py
+    pass
 
 
 def path_to_init(cast_to_str=False):
