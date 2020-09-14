@@ -1,11 +1,13 @@
+from .__initplus__ import path_to_init, __basedir__, load_config
 try:
     from .breadcrumbs import drop_breadcrumb
     from .tasks import _MetaflowTask, MetaflowTask
-    from .__initplus__ import config
+    config = load_config()
 except ModuleNotFoundError:  # For integration with setup.py
     pass
 
-from .__initplus__ import path_to_init, __basedir__
+
+
 
 def load_current_version():
     """Load the current version of this package."""
