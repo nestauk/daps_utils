@@ -104,7 +104,18 @@ python s3_example.py run
 ```
 
 Look inside `s3_example.py` and note the usage of the `@talk_to_luigi` class decorator. This is critical for your
-`metaflow` flow to talk with your `luigi` task. There are only a small number of requirements for your flow to run via `MetaflowTask`:
+`metaflow` flow to talk with your `luigi` task:
+
+```python
+from daps_utils import talk_to_luigi
+
+@talk_to_luigi
+class MyFlow(FlowSpec):
+    [...]  # Do something
+```
+
+
+There are only a small number of requirements for your flow to run via `MetaflowTask`:
 
 - Firstly, make sure you are using the `@talk_to_luigi` class decorator on your flow.
 - If your flow has any external dependencies, you will need to include a `requirements.txt` in your flow directory to specify the python environment.
@@ -128,7 +139,7 @@ flows
 	├── Dockerfile        # <-- Can specify this on it's own, if you're happy with "Dockerfile-base"
 	├── launch.sh         # <-- Can specify this on it's own, if you're happy with "Dockerfile"
 	├── requirements.txt  # <-- Only required if you have external python dependencies
-	└── my_flow.py        # <-- You always need this, this is your flow. Don't forget to use the @talk_to_luigi decorator
+	└── my_flow.py        # <-- You always need this, this is your flow. Don't forget to use the @talk_to_luigi class decorator
 ```
 
 You can then run add your "`luigi`" `MetaflowTask` as follows:
@@ -140,6 +151,12 @@ from daps_utils import MetaflowTask
 class RootTask(luigi.WrapperTask):
 	def requires(self):
 		return MetaflowTask('examples/s3_example/s3_example.py')
+```
+
+which you can run with (optionally with the `--local-scheduler` flag if running locally):
+
+```bash
+luigi --module my_task_name RootTask
 ```
 
 Where should my `luigi` tasks live?
