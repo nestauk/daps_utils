@@ -31,7 +31,7 @@ Metaflow is a great lightweight microframework for developing data science pipel
 integrated batching functionality. A lot of the heavy-lifting of production development is
 abstracted away, allowing developers to do their own thing without having to worry too much about portability.
 
-On the issue of portability however problems can arise however when really putting `metaflow` flows into production.
+On the issue of portability, however, problems can arise however when really putting `metaflow` flows into production.
 The first is the environment - what if different parts of your production infrastructure are being developed
 on different operating systems (or even OS versions)? This is easy to fix - just containerize it with `docker`, obviously.
 
