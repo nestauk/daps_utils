@@ -11,16 +11,16 @@ logger = logging.basicConfig(level=logging.DEBUG)
 BASE_PATH = 'tests/integration/{}/example_flow.py'
 
 
-def test_good_defaults_partial_rebuild():
-    flow_path = BASE_PATH.format('good_defaults')
-    build_and_run_image(daps_utils, flow_path, rebuild_flow=True)
-
-
 def test_good_defaults_full_rebuild():
     flow_path = BASE_PATH.format('good_defaults')
     build_and_run_image(daps_utils, flow_path,
                         rebuild_base=True,
                         rebuild_flow=True)
+
+
+def test_good_defaults_partial_rebuild():
+    flow_path = BASE_PATH.format('good_defaults')
+    build_and_run_image(daps_utils, flow_path, rebuild_flow=True)
 
 
 def test_good_overrides():
