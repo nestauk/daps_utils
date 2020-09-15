@@ -166,7 +166,7 @@ You can then run add your "`luigi`" `MetaflowTask` as follows, noting your repos
 
 ```python
 import luigi
-from daps_utils import MetaflowTask
+from daps_utils import _MetaflowTask as MetaflowTask  # <-- Temporary until we've got daps_utils.MetaflowTask up and running
 
 class RootTask(luigi.WrapperTask):
 	def requires(self):
