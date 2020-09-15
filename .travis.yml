@@ -14,22 +14,29 @@ branches:
 jobs:
   include:
     # ---------------------------------
-    - name: Unit tests
+    - name: Unit tests (Linux)
       language: python
       python: 3.8
-      os:
-        - linux
-        - osx    
+      os: linux
       script:
         - pytest --disable-pytest-warnings daps_utils/tests/
+    - name: Unit tests (OSX)
+      language: python
+      python: 3.8
+      os: osx
+      script:
+        - pytest --disable-pytest-warnings daps_utils/tests/        
     # ---------------------------------
-    - name: Script tests
+    - name: Script tests (Linux)
       language: bash
-      os:
-        - linux
-        - osx    
+      os: linux
       script:
         - bash ./.travis/test_scripts.sh
+    - name: Script tests (OSX)
+      language: bash
+      os: osx
+      script:
+        - bash ./.travis/test_scripts.sh        
     # ---------------------------------
     # - name: Integration
     #   script:
