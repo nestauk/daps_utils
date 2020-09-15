@@ -25,11 +25,11 @@ RUN conda init bash
 RUN exec bash && /bin/bash ~/.bashrc && conda activate metaflow-env
 
 # Install system reqs
-RUN /opt/conda/envs/metaflow-env/bin/pip install -r ${REPONAME}/requirements.txt
+RUN ls ${REPONAME}/requirements.txt && /opt/conda/envs/metaflow-env/bin/pip install -r ${REPONAME}/requirements.txt || true
 
 # Move to working directory and install local reqs
 RUN /opt/conda/envs/metaflow-env/bin/pip install https://github.com/nestauk/daps_utils/archive/dev.zip
-RUN ls ${REPONAME}/${FLOWDIR}/requirements.txt && /opt/conda/envs/metaflow-env/bin/pip install -r ${REPONAME}/${FLOWDIR}/requirements.txt
+RUN ls ${REPONAME}/${FLOWDIR}/requirements.txt && /opt/conda/envs/metaflow-env/bin/pip install -r ${REPONAME}/${FLOWDIR}/requirements.txt || true
 RUN conda clean -afy
 
 # Prepare for launch
