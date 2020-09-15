@@ -16,24 +16,26 @@ jobs:
     # ---------------------------------
     - name: Unit tests (Linux)
       language: python
-      python: 3.8
+      python: 3.7
       os: linux
       script:
         - pytest --disable-pytest-warnings daps_utils/tests/
     - name: Unit tests (OSX)
       language: python
-      python: 3.8
+      python: 3.7
       os: osx
       script:
         - pytest --disable-pytest-warnings daps_utils/tests/        
     # ---------------------------------
     - name: Script tests (Linux)
       language: python
+      python: 3.7      
       os: linux
       script:
         - bash ./.travis/test_scripts.sh
     - name: Script tests (OSX)
       language: python
+      python: 3.7      
       os: osx
       script:
         - bash ./.travis/test_scripts.sh        
