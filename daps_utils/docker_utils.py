@@ -33,6 +33,14 @@ class BadDockerfileSetup(Exception):
     pass
 
 
+def get_metaflow_config():
+    """Workaround for Travis"""
+    k = 'METAFLOW_DATASTORE_SYSROOT_S3'
+    if k not in METAFLOW_CONFIG:
+        METAFLOW_CONFIG[k] = ''
+    return METAFLOW_CONFIG
+
+
 def base_image_tag(dockerfile):
     """Extract the image tag from the fist line of a dockerfile."""
     with open(dockerfile) as f:
