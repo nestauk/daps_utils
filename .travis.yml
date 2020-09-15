@@ -1,5 +1,10 @@
 # ---------------------------------
 # Globals / defaults
+dist: xenial
+addons:
+  apt:
+    sources:
+      - docker-xenial
 cache: pip
 install:
   - pip install --upgrade setuptools
