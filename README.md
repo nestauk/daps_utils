@@ -162,7 +162,7 @@ flows
 	└── my_flow.py        # <-- You always need this, this is your flow. Don't forget to use the @talk_to_luigi class decorator
 ```
 
-You can then run add your "`luigi`" `MetaflowTask` as follows, noting your repository name to replace `REPO_NAME`:
+You can then run add your "`luigi`" `MetaflowTask` as follows, noting your repository name to replace `REPONAME`:
 
 ```python
 import luigi
@@ -170,13 +170,13 @@ from daps_utils import MetaflowTask
 
 class RootTask(luigi.WrapperTask):
 	def requires(self):
-		return MetaflowTask('examples/s3_example/s3_example.py', daps_pkg="REPO_NAME")
+		return MetaflowTask('examples/s3_example/s3_example.py', daps_pkg="REPONAME")
 ```
 
 which you can run with (optionally with the `--local-scheduler` flag if running locally):
 
 ```bash
-luigi --module my_task_name RootTask
+PYTHONPATH=/path/to/REPONAME/:$PWD luigi --module examples_tasks RootTask --local-scheduler
 ```
 
 Where should my `luigi` tasks live?
