@@ -1,0 +1,35 @@
+# ---------------------------------
+# Globals / defaults
+language: python
+python: 3.8
+os:
+  - linux
+  - osx
+install:
+  - pip install --upgrade setuptools
+  - python setup.py install
+  - python -c "import sys; print(sys.path)"
+before_script:
+  - sudo rm -f /etc/boto.cfg
+branches:
+  only:
+    - dev  
+# ---------------------------------
+# Specify job grid
+jobs:
+  include:
+    # ---------------------------------
+    - name: Unit tests
+      script:
+        - pytest --disable-pytest-warnings daps_utils/tests/
+    # ---------------------------------
+    - name: Script tests
+      language: bash
+      install:
+        - echo "nothing to install"
+      script:
+        - bash ./.travis/test_scripts.sh
+    # ---------------------------------
+    # - name: Integration
+    #   script:
+    #     - pytest --disable-pytest-warnings daps_utils/flows/tests/
