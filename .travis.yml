@@ -1,8 +1,5 @@
 # ---------------------------------
 # Globals / defaults
-os:
-  - linux
-  - osx
 install:
   - pip install --user --upgrade setuptools
   - python setup.py install
@@ -19,12 +16,18 @@ jobs:
     # ---------------------------------
     - name: Unit tests
       language: python
-      python: 3.8      
+      python: 3.8
+      os:
+        - linux
+        - osx    
       script:
         - pytest --disable-pytest-warnings daps_utils/tests/
     # ---------------------------------
     - name: Script tests
       language: bash
+      os:
+        - linux
+        - osx    
       script:
         - bash ./.travis/test_scripts.sh
     # ---------------------------------
