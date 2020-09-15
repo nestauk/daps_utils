@@ -176,7 +176,7 @@ class RootTask(luigi.WrapperTask):
 which you can run with (optionally with the `--local-scheduler` flag if running locally):
 
 ```bash
-PYTHONPATH=/path/to/REPONAME/:$PWD luigi --module examples_tasks RootTask --local-scheduler
+PYTHONPATH=/path/to/REPONAME/:$PWD luigi --module examples_tasks RootTask [--local-scheduler]
 ```
 
 Where should my `luigi` tasks live?
