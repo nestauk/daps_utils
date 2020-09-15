@@ -214,4 +214,4 @@ branches must be linked to a GitHub issue and named accordingly:
 {GitHub issue number}_{Tiny description}
 ```
 
-For example `6_readme`, which indicates that [this branch](https://github.com/nestauk/daps_utils/pulls/7) refered to [this issue](https://github.com/nestauk/daps_utils/issues/6).
+For example `6_readme`, which indicates that [this branch](https://github.com/nestauk/daps_utils/pull/9) refered to [this issue](https://github.com/nestauk/daps_utils/issues/6).
