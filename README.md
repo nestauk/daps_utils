@@ -70,7 +70,7 @@ First-time usage
 ----------------
 
 In order to use `MetaflowTask`, you will need to have your repository set up accordingly.
-After installing `daps-utils`, the following command will do this for you (note that this will also set up [calendar versioning](calendar-versioning)):
+After installing `daps-utils`, the following command will do this for you (note that this will also set up [calendar versioning](#calendar-versioning)):
 
 ```bash
 $ metaflowtask-init <REPONAME>
@@ -162,22 +162,49 @@ flows
 	└── my_flow.py        # <-- You always need this, this is your flow. Don't forget to use the @talk_to_luigi class decorator
 ```
 
-You can then run add your "`luigi`" `MetaflowTask` as follows:
+You can then run add your "`luigi`" `MetaflowTask` as follows, noting your repository name to replace `REPONAME`:
 
 ```python
 import luigi
-from daps_utils import MetaflowTask
+from daps_utils import _MetaflowTask as MetaflowTask  # <-- Temporary until we've got daps_utils.MetaflowTask up and running
 
 class RootTask(luigi.WrapperTask):
 	def requires(self):
-		return MetaflowTask('examples/s3_example/s3_example.py')
+		return MetaflowTask('examples/s3_example/s3_example.py', daps_pkg="REPONAME")
 ```
 
 which you can run with (optionally with the `--local-scheduler` flag if running locally):
 
 ```bash
-luigi --module my_task_name RootTask
+$ PYTHONPATH=/path/to/REPONAME/:$PWD luigi --module examples_tasks RootTask [--local-scheduler]
 ```
+
+Note that the full set of arguments for `_MetaflowTask` are:
+
+| argument | value, default | description |
+| --- | --- | --- |
+| `flow_path` | `str` | Path to your flow, relative to the `flows` directory. |
+| `daps_pkg` | `str` | Name of the package (in your PYTHONPATH) where your `flows` directory can be found. |
+| `flow_tag` | `str` | Choice of either `"dev"` or `"production"`, to be passed as a `--tag` to your flow. |
+| `rebuild_base` | `bool`, `default=False` | Whether or not to rebuild the docker image from scratch (starting with `Dockerfile-base` then `Dockerfile`). Only do this if you have changed `Dockerfile-base`. |
+| `rebuild_flow` | `bool`, `default=True` | Whether or not to rebuild the docker image from the base image upwards (only implementing `Dockerfile`, not `Dockerfile-base`). This is done by default to include the latest changes to your flow. |
+| `flow_kwargs` | `dict`, `default={}` | Keyword arguments to pass to your flow as parameters (e.g. `{'foo':'bar'}` will be passed to the flow as `--foo bar`). |
+| `container_kwargs` | `dict`, `default={}` | Additional keyword arguments to pass to the `docker run` command, e.g. `mem_limit` for setting the memory limit. See [the python-docker docs](https://docker-py.readthedocs.io/en/stable/containers.html) for full information. |
+| `requires_task` | `luigi.Task`, `default=None` | Any task that this task is dependent on. |
+| `requires_task_kwargs` | `dict`, `default={}` | Keyword arguments to pass to any dependent task, if applicable. |
+
+
+
+- `flow_path` (`str`): Path to your flow, relative to the `flows` directory
+- `daps_pkg` (`str`): Name of the package (in your PYTHONPATH) where your `flows` directory can be found.
+- `flow_tag` (`str`): Choice of either `"dev"` or `"production"`, to be passed as a `--tag` to your flow.                     
+- `rebuild_base` (`bool`, `default=False`): Whether or not to rebuild the docker image from scratch (starting with `Dockerfile-base` then `Dockerfile`). Only do this if you have changed `Dockerfile-base`.
+- `rebuild_flow` (`bool`, `default=True`): Whether or not to rebuild the docker image from the base image upwards (only implementing `Dockerfile`, not `Dockerfile-base`). This is done by default to include the latest changes to your flow.
+- `flow_kwargs` (`dict`, `default={}`): Keyword arguments to pass to your flow as parameters (e.g. `{'foo':'bar'}` will be passed to the flow as `--foo bar`).
+- `container_kwargs` (`dict`, `default={}`): Additional keyword arguments to pass to the `docker run` command, e.g. `mem_limit` for setting the memory limit. See [the python-docker docs](https://docker-py.readthedocs.io/en/stable/containers.html) for full information. 
+- `requires_task` (`luigi.Task`, `default=None`): Any task that this task is dependent on.
+- `requires_task_kwargs` (`dict`, `default={}`): Keyword arguments to pass to any dependent task, if applicable.
+
 
 Where should my `luigi` tasks live?
 -----------------------------------
@@ -214,4 +241,4 @@ branches must be linked to a GitHub issue and named accordingly:
 {GitHub issue number}_{Tiny description}
 ```
 
-For example `6_readme`, which indicates that [this branch](https://github.com/nestauk/daps_utils/pulls/7) refered to [this issue](https://github.com/nestauk/daps_utils/issues/6).
+For example `6_readme`, which indicates that [this branch](https://github.com/nestauk/daps_utils/pull/9) refered to [this issue](https://github.com/nestauk/daps_utils/issues/6).

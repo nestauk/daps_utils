@@ -1,6 +1,7 @@
 #!/usr/bin/env bash
 
 set -e
+export BIGCOMMENT='################################################################'
 
 function DUtilsBaseDir(){
     DU_BASEDIR=$(python -c "import daps_utils; print(daps_utils.__basedir__)")
@@ -10,35 +11,48 @@ function DUtilsBaseDir(){
 function CreateConfig(){
     mkdir -p config/metaflowtask &> /dev/null
     cp $(DUtilsBaseDir)/config/metaflowtask/* config/metaflowtask/
-    echo "${1}/config/metaflowtask/ has been created or updated, with a Dockerfile, Dockerfile-base and launch.sh"    
+    echo "${1}/config/metaflowtask/ has been created or updated, with a Dockerfile, Dockerfile-base and launch.sh"
 }
 
 function CreateFlowsDir(){
     EXAMPLE_DIR=flows/examples/s3_example
-    mkdir -p ${EXAMPLE_DIR} &> /dev/null    
+    mkdir -p ${EXAMPLE_DIR} &> /dev/null
     cp $(DUtilsBaseDir)/${EXAMPLE_DIR}/s3_example.py ${EXAMPLE_DIR}/
-    echo "${1}/flows/example/ has been created or updated, with an example flow."    
+    echo "${1}/flows/example/ has been created or updated, with an example flow."
+}
+
+function CheckAndCreate(){
+    touch ${2}
+    # Don't append text if it already exists
+    DU_MSG="### Text automatically added by daps-utils metaflowtask-init ###"
+    if grep -Fxq "${DU_MSG}" ${2} &> /dev/null
+    then
+	echo -e "\nWARNING: not copying or editing ${1}/${2} as 'metaflowtask-init' has already been called. Manually\
+ remove previous edit by metaflowtask-init (i.e. the text between the long comment blocks), and then try again.\n" >&2
+	exit 1
+    fi
+    echo ${BIGCOMMENT} >> ${2}
+    echo ${DU_MSG} >> ${2}
+}
+
+function AddRequirements(){
+    touch requirements.txt
+    echo "Added ${1}/requirements.txt. Is is empty by default, but you can set 'global' flow requirements here."
 }
 
 function CopyInitPlus(){
-    touch __init__.py
-    # Don't append text if it already exists
-    DU_MSG="### Text automatically added by daps-utils metaflowtask-init ###"
-    if grep -Fxq "${DU_MSG}" __init__.py &> /dev/null
-    then
-	echo -e "\nWARNING: not copying or editing ${1}/__init__.py as 'metaflowtask-init' has already been called. Manually remove previous edit by metaflowtask-init (i.e. the text between the long comment blocks), and then try again.\n" >&2
-	exit 1
-    fi
-
-    # No problems, so proceed normally
-    cp $(DUtilsBaseDir)/__initplus__.py .
-    echo '################################################################' >> __init__.py
-    echo ${DU_MSG} >> __init__.py
+    # Create __init__
+    CheckAndCreate ${1} __init__.py
     echo 'from .__initplus__ import load_current_version, __basedir__, load_config' >> __init__.py
-    echo 'config = load_config()' >> __init__.py    
-    echo '__version__ = load_current_version()' >> __init__.py    
-    echo '################################################################' >> __init__.py
-    echo "${1}/__init__.py and ${1}/__initplus__.py have been created or updated."    
+    echo 'config = load_config()' >> __init__.py
+    echo '__version__ = load_current_version()' >> __init__.py
+    echo ${BIGCOMMENT} >> __init__.py
+    
+    # Create __initplus__
+    cp $(DUtilsBaseDir)/__initplus__.py .
+
+    # Done
+    echo "${1}/__init__.py and ${1}/__initplus__.py have been created or updated."
 }
 
 
@@ -48,14 +62,16 @@ if [ "$#" -ne 1 ] || ! [ -d "$DU_LOCAL_REPO_NAME" ]; then
   echo "Usage: $0 LOCAL_REPO_NAME" >&2
   exit 1
 fi
-if [ -d "../$DU_LOCAL_REPO_NAME/$DU_LOCAL_REPO_NAME" ]; then
+# Set up calendar versioning
+calver-init
+# Check it all adds up
+if [ "${PWD##*/}" != "${DU_LOCAL_REPO_NAME}" ]; then
     echo "ERROR: Your repository and package must have the same name, i.e. '$DU_LOCAL_REPO_NAME/$DU_LOCAL_REPO_NAME' does not exist, where '$DU_LOCAL_REPO_NAME' should be the name of this local directory, not '${PWD##*/}'." >&2
     exit 1
 fi
-# Set up calendar versioning
-calver-init
 # Set up MetaflowTask structure
 cd ${DU_LOCAL_REPO_NAME}
 CreateConfig ${DU_LOCAL_REPO_NAME}
 CreateFlowsDir ${DU_LOCAL_REPO_NAME}
 CopyInitPlus ${DU_LOCAL_REPO_NAME}
+AddRequirements ${DU_LOCAL_REPO_NAME}

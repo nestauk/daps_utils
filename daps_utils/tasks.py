@@ -36,7 +36,6 @@ class _MetaflowTask(luigi.Task):
     """Run metaflow Flows in Docker"""
     flow_path = luigi.Parameter()
     daps_pkg = luigi.Parameter()
-    date = luigi.DateParameter(default=dt.now())
     flow_tag = luigi.ChoiceParameter(choices=["dev", "production"],
                                      var_type=str, default="dev")
     rebuild_base = luigi.BoolParameter(default=False)
