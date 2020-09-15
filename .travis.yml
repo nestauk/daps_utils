@@ -1,7 +1,7 @@
 # ---------------------------------
 # Globals / defaults
 install:
-  - pip install --user --upgrade setuptools
+  - pip install --upgrade setuptools
   - python setup.py install
   - python -c "import sys; print(sys.path)"
 before_script:
@@ -28,12 +28,12 @@ jobs:
         - pytest --disable-pytest-warnings daps_utils/tests/        
     # ---------------------------------
     - name: Script tests (Linux)
-      language: bash
+      language: python
       os: linux
       script:
         - bash ./.travis/test_scripts.sh
     - name: Script tests (OSX)
-      language: bash
+      language: python
       os: osx
       script:
         - bash ./.travis/test_scripts.sh        
