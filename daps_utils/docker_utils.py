@@ -58,9 +58,11 @@ def decode_logs(output):
 
 def _build_image(pkg, tag, rebuild, **kwargs):
     """Call docker SDK to build an image if it doesn't already exist."""
+    logging.info('Getting docker env')
     dkr = docker.from_env()
     logs = []
     try:
+        logging.info(f"Retrieving image '{tag}'")
         img = dkr.images.get(tag)
         logging.info(f"Image '{tag}' already exists")
     except docker.errors.ImageNotFound:

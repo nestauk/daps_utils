@@ -37,4 +37,4 @@ jobs:
       language: python
       python: 3.7      
       script:
-        - pytest -v -x daps_utils/flows/tests/integration/
+        - pytest -s -v -x daps_utils/flows/tests/integration/
