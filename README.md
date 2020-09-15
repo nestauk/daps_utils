@@ -70,7 +70,7 @@ First-time usage
 ----------------
 
 In order to use `MetaflowTask`, you will need to have your repository set up accordingly.
-After installing `daps-utils`, the following command will do this for you (note that this will also set up [calendar versioning](calendar-versioning)):
+After installing `daps-utils`, the following command will do this for you (note that this will also set up [calendar versioning](#calendar-versioning)):
 
 ```bash
 $ metaflowtask-init <REPONAME>
