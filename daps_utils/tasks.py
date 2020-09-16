@@ -9,14 +9,11 @@ import abc
 import luigi
 from luigi.contrib.s3 import S3Target, S3PathTask
 from datetime import datetime as dt
-from metaflow.metaflow_config import METAFLOW_CONFIG
 from importlib import import_module
 
+from .docker_utils import get_metaflow_config
 from .docker_utils import build_and_run_image
 from .breadcrumbs import pickup_breadcrumb
-
-
-S3PATH = METAFLOW_CONFIG['METAFLOW_DATASTORE_SYSROOT_S3']
 
 
 def import_pkg(daps_pkg):
@@ -45,9 +42,14 @@ class _MetaflowTask(luigi.Task):
     requires_task = luigi.TaskParameter(default=S3PathTask)
     requires_task_kwargs = luigi.DictParameter(default={})
 
+    @property
+    def s3path(self):
+        metaflow_config = get_metaflow_config()
+        return metaflow_config['METAFLOW_DATASTORE_SYSROOT_S3']
+
     def requires(self):
         if self.requires_task is S3PathTask:
-            return S3PathTask(S3PATH)
+            return S3PathTask(self.s3path)
         return self.requires_task(**self.requires_task_kwargs)
 
     def run(self):
@@ -67,7 +69,7 @@ class _MetaflowTask(luigi.Task):
         out.close()
 
     def output(self):
-        return S3Target(f'{S3PATH}/{self.task_id}')
+        return S3Target(f'{self.s3path}/{self.task_id}')
 
 
 class MetaflowTask(luigi.Task):

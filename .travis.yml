@@ -1,0 +1,40 @@
+# ---------------------------------
+# Globals / defaults
+dist: xenial
+os: linux
+addons:
+  apt:
+    sources:
+      - docker-xenial
+cache: pip
+install:
+  - pip install --upgrade setuptools
+  - python setup.py install
+  - python -c "import sys; print(sys.path)"
+before_script:
+  - sudo rm -f /etc/boto.cfg
+branches:
+  only:
+    - dev
+# ---------------------------------
+# Specify job grid
+jobs:
+  include:
+    # ---------------------------------
+    - name: Unit tests (Linux)
+      language: python
+      python: 3.7
+      script:
+        - pytest -x daps_utils/tests/
+    # ---------------------------------
+    - name: Script tests (Linux)
+      language: python
+      python: 3.7
+      script:
+        - bash ./.travis/test_scripts.sh
+    # ---------------------------------
+    - name: Integration (Linux)
+      language: python
+      python: 3.7      
+      script:
+        - pytest -s -v -x daps_utils/flows/tests/integration/

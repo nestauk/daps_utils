@@ -8,6 +8,7 @@ from daps_utils.docker_utils import fullpath_to_relative
 
 CONFIG = config['metaflowtask']
 
+
 def test_base_image_tag():
     base_image_tag(CONFIG['Dockerfile']) == 'metaflowbase:latest'
 
@@ -16,8 +17,6 @@ def test_decode_logs():
     msg = 'thisissome\noutput'
     msg = [x.encode() for x in list(msg)]
     expected = "\n>>> 'thisissome'\n>>> 'output'"
-    print(repr(expected))
-    print(repr(decode_logs(msg)))
     assert decode_logs(msg) == expected
 
 

@@ -33,6 +33,14 @@ class BadDockerfileSetup(Exception):
     pass
 
 
+def get_metaflow_config():
+    """Workaround for Travis"""
+    k = 'METAFLOW_DATASTORE_SYSROOT_S3'
+    if k not in METAFLOW_CONFIG:
+        METAFLOW_CONFIG[k] = ''
+    return METAFLOW_CONFIG
+
+
 def base_image_tag(dockerfile):
     """Extract the image tag from the fist line of a dockerfile."""
     with open(dockerfile) as f:
@@ -53,6 +61,7 @@ def _build_image(pkg, tag, rebuild, **kwargs):
     dkr = docker.from_env()
     logs = []
     try:
+        logging.info(f"Retrieving image '{tag}'")
         img = dkr.images.get(tag)
         logging.info(f"Image '{tag}' already exists")
     except docker.errors.ImageNotFound:
@@ -148,7 +157,7 @@ def build_flow_image(pkg, flow_path, rebuild_base,
     launchsh = get_filepath(pkg, flow_dir, 'launch.sh')
     build_args = {'METAFLOWCONFIG': json.dumps(METAFLOW_CONFIG),
                   'METAFLOW_RUN_PARAMETERS': ' '.join(f'--{k} {v}' for k, v in
-                                                      flow_kwargs.items()),                  
+                                                      flow_kwargs.items()),
                   'LAUNCHSH': fullpath_to_relative(pkg, launchsh),
                   'REPONAME': pkg.__name__,
                   'USER': getuser(),
@@ -197,7 +206,8 @@ def run_image(img, **kwargs):
 
 
 def build_and_run_image(pkg, flow_path, rebuild_base=False,
-                        rebuild_flow=True, flow_kwargs={}, **kwargs):
+                        rebuild_flow=True, flow_kwargs={},
+                        **kwargs):
     """Build and run an image for your flow, by specifying
     the relative path to your flow (from the repo base).
     If local Dockerfile, Dockerfile-base and launch.sh are provided,
