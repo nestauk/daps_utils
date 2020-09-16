@@ -1,4 +1,4 @@
-daps_utils
+daps_utils [![Build Status](https://travis-ci.org/nestauk/daps_utils.svg?branch=dev)](https://travis-ci.org/nestauk/daps_utils)
 ==========
 
   * [Installation](#installation)
