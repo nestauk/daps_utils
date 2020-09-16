@@ -34,6 +34,10 @@ class BadDockerfileSetup(Exception):
 
 
 def get_metaflow_config():
+    """Workaround for Travis"""
+    k = 'METAFLOW_DATASTORE_SYSROOT_S3'
+    if k not in METAFLOW_CONFIG:
+        METAFLOW_CONFIG[k] = ''
     return METAFLOW_CONFIG
 
 
@@ -54,7 +58,6 @@ def decode_logs(output):
 
 def _build_image(pkg, tag, rebuild, **kwargs):
     """Call docker SDK to build an image if it doesn't already exist."""
-    logging.info('Getting docker env')
     dkr = docker.from_env()
     logs = []
     try:
