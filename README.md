@@ -2,7 +2,7 @@ daps_utils [![Build Status](https://travis-ci.org/nestauk/daps_utils.svg?branch=
 ==========
 
   * [Installation](#installation)
-  * [Calendar Versioning](#calendar-versioning)  
+  * [Automatic Git Calendar Versioning](#automatic-git-calendar-versioning)  
   * [MetaflowTask](#metaflowtask)
     * [Why run `metaflow` in `luigi`?](#why-run-metaflow-in-luigi)
     * [First-time usage](#first-time-usage)
@@ -18,8 +18,8 @@ Installation
 pip install https://github.com/nestauk/daps_utils/archive/dev.zip
 ```
 
-Calendar Versioning
-===================
+Automatic Git Calendar Versioning
+=================================
 
 If you need to be convinced why CalVer is right for you (which it might not be), then you can
 find some decent arguments on the [CalVer "homepage"](https://calver.org/). Anyway, the following command line tool will set it up
@@ -31,7 +31,8 @@ $ calver-init
 
 It has one prerequisite: you must be calling `calver-init` from a git repository (i.e. you have called `git init` and then `git commit` at least once).
 
-Whatever the name of your git repo, for example `daps_utils`, your `VERSION` file will be found under a subdirectory of the same name, for example `daps_utils/VERSION`. The versioning scheme adheres to the following pattern:
+Whatever the name of your git repo, for example `daps_utils`, your `VERSION` file will be found under a subdirectory of the same name, for example `daps_utils/VERSION`. And now every time your call `git commit` in this repository your `VERSION` file will be amended accordingly.
+The versioning scheme adheres to the following pattern:
 
 ```python
 YY.MM.DD.{git branch}
@@ -70,7 +71,7 @@ First-time usage
 ----------------
 
 In order to use `MetaflowTask`, you will need to have your repository set up accordingly.
-After installing `daps-utils`, the following command will do this for you (note that this will also set up [calendar versioning](#calendar-versioning)):
+After installing `daps-utils`, the following command will do this for you (note that this will also set up [calendar versioning](#automatic-git-calendar-versioning)):
 
 ```bash
 $ metaflowtask-init <REPONAME>
