@@ -3,4 +3,4 @@
 set -e
 ls noneexistentfile
 source activate metaflow-env
-time python ${REPONAME}/${FLOWDIR}/${FLOW} --no-pylint run
+time python ${REPONAME}/${FLOWDIR}/${FLOW} --no-pylint
