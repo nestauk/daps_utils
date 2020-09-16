@@ -1,6 +1,8 @@
 daps_utils [![Build Status](https://travis-ci.org/nestauk/daps_utils.svg?branch=dev)](https://travis-ci.org/nestauk/daps_utils)
 ==========
 
+Tools for setting up and running pipelines in a Data Analytics and Production System (DAPS).
+
   * [Installation](#installation)
   * [Automatic Git Calendar Versioning](#automatic-git-calendar-versioning)  
   * [MetaflowTask](#metaflowtask)
