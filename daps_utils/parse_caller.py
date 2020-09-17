@@ -75,6 +75,9 @@ def get_main_caller_pkg(frame):
     # Exception for setup.py
     if caller.name == 'setup.py':
         return None
+    # Exception for dockerized flows
+    if '/flows/' in caller and caller.startswith('/tmp/'):
+        return None
     # Exception for users who don't want to use metaflowtask
     try:
         git_root = get_git_root(caller)
