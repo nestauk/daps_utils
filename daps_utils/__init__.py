@@ -3,8 +3,8 @@ try:
     from .breadcrumbs import drop_breadcrumb as talk_to_luigi
     from .tasks import _MetaflowTask, MetaflowTask
     config = load_config()
-except ModuleNotFoundError:  # For integration with setup.py
+except ModuleNotFoundError as exc:  # For integration with setup.py
+    print(exc)
     pass
-    
 
 __version__ = load_current_version()

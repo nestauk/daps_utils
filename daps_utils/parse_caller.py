@@ -1,3 +1,15 @@
+"""
+parse_caller
+============
+
+Tool for getting ahold of the module ("package")
+that called makes the import of daps_utils. This
+introspection is required so that MetaflowTask
+knows where to find the base directory for
+finding flows, config and also the root for
+building the docker image.
+"""
+
 from pathlib import Path
 import inspect
 import os
@@ -10,12 +22,14 @@ class NotSetupProperlyError(Exception):
 
 
 def get_git_root(path):
+    """From the given path, return the Git repo root dir"""
     git_repo = git.Repo(path, search_parent_directories=True)
     git_root = git_repo.git.rev_parse("--show-toplevel")
     return Path(git_root)
 
 
 def is_metaflowtask_init_dir(path):
+    """Does the given path contain __init__.py and __initplus__.py?"""
     p = Path(path)
     if p.is_dir():
         files = [child.name for child in p.iterdir() if child.is_file()]
@@ -25,6 +39,9 @@ def is_metaflowtask_init_dir(path):
 
 
 def get_pkg_source(path, caller, git_root):
+    """Recursively find the directory between the caller and the Git root
+    which contains __init__.py and __initplus__.py files. The result is the
+    module root path."""
     p = Path(path)
     if is_metaflowtask_init_dir(p):
         return p.name
@@ -40,6 +57,13 @@ def get_pkg_source(path, caller, git_root):
 
 
 def get_caller(f, ignore=['daps_utils/tasks.py', 'daps_utils/__init__.py']):
+    """Get the full path to the namespace where daps_utils is first imported
+    in runtime. Note that that introspection tool finds a bunch 
+    of "frozen" imports (which are artefacts of the python import system, 
+    and should be ignored) and then finds two files ('daps_utils/tasks.py', 
+    'daps_utils/__init__.py') which are called when daps_utils is imported.
+    It is therefore the file following these which is the true "caller".
+    """
     fpath = inspect.getfile(f)
     skip = fpath.startswith('<frozen') or any(i in fpath for i in ignore)
     if skip and f.f_back is not None:
@@ -48,6 +72,7 @@ def get_caller(f, ignore=['daps_utils/tasks.py', 'daps_utils/__init__.py']):
 
 
 def get_main_caller_pkg(frame):
+    """Retrieve the module which called daps_utils first."""
     caller = get_caller(frame)
     git_root = get_git_root(caller)
     pkg_name = get_pkg_source(caller, caller, git_root)
