@@ -77,8 +77,6 @@ def get_main_caller_pkg(frame):
         return None
     # Exception for dockerized flows
     _caller = str(caller)
-    a = "==> {_caller}, {'/flows/' in _caller and _caller.startswith('/tmp/')}"
-    assert False, a
     if '/flows/' in _caller and _caller.startswith('/tmp/'):
         return None
     # Exception for users who don't want to use metaflowtask
