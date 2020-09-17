@@ -5,5 +5,6 @@ try:
     config = load_config()
 except ModuleNotFoundError:  # For integration with setup.py
     pass
+    
 
 __version__ = load_current_version()
