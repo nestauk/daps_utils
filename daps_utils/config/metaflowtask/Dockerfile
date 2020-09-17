@@ -6,14 +6,12 @@ ARG FLOWDIR
 ARG LAUNCHSH
 ARG REPONAME
 ARG METAFLOWCONFIG
-ARG METAFLOWCONFIGTEST
 ARG METAFLOW_RUN_PARAMETERS
 ARG METAFLOW_PROFILE
 ARG USER
 
 RUN mkdir ~/.metaflowconfig
 RUN echo ${METAFLOWCONFIG} > ~/.metaflowconfig/config.json
-RUN echo ${METAFLOWCONFIGTEST} > ~/.metaflowconfig/config-test.json
 
 ENV METAFLOW_PROFILE=${METAFLOW_PROFILE}
 ENV USER=${USER}
@@ -27,8 +25,6 @@ COPY . ${REPONAME}
 # Set up conda env
 RUN conda init bash
 RUN exec bash && /bin/bash ~/.bashrc && conda activate metaflow-env
-
-RUN echo "===> Going to install"
 
 # Install system reqs
 RUN ls ${REPONAME}/requirements.txt && /opt/conda/envs/metaflow-env/bin/pip install -r ${REPONAME}/requirements.txt || true
