@@ -2,12 +2,10 @@
 parse_caller
 ============
 
-Tool for getting ahold of the module ("package")
-that called makes the import of daps_utils. This
-introspection is required so that MetaflowTask
-knows where to find the base directory for
-finding flows, config and also the root for
-building the docker image.
+Tool for getting ahold of the module ("package") that makes the first
+import of daps_utils. This introspection is required so that
+MetaflowTask knows where to find the base directory for finding flows,
+config and also the root for building the docker image.
 """
 
 from pathlib import Path
@@ -74,7 +72,10 @@ def get_caller(f, ignore=['daps_utils/tasks.py', 'daps_utils/__init__.py']):
 def get_main_caller_pkg(frame):
     """Retrieve the module which called daps_utils first."""
     caller = get_caller(frame)
-    git_root = get_git_root(caller)
+    try:
+        git_root = get_git_root(caller)
+    except git.exc.NoSuchPathError:
+        return None
     pkg_name = get_pkg_source(caller, caller, git_root)
     pkg = import_module(pkg_name)
     return pkg
