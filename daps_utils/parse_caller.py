@@ -72,10 +72,15 @@ def get_caller(f, ignore=['daps_utils/tasks.py', 'daps_utils/__init__.py']):
 def get_main_caller_pkg(frame):
     """Retrieve the module which called daps_utils first."""
     caller = get_caller(frame)
+    # Exception for setup.py
+    if caller.name == 'setup.py':
+        return None
+    # Exception for users who don't want to use metaflowtask
     try:
         git_root = get_git_root(caller)
     except git.exc.NoSuchPathError:
         return None
+    # Otherwise, resolve the calling package
     pkg_name = get_pkg_source(caller, caller, git_root)
     pkg = import_module(pkg_name)
     return pkg
