@@ -165,7 +165,7 @@ flows
 	└── my_flow.py        # <-- You always need this, this is your flow. Don't forget to use the @talk_to_luigi class decorator
 ```
 
-You can then run add your "`luigi`" `MetaflowTask` as follows, noting your repository name to replace `REPONAME`:
+You can then run add your "`luigi`" `MetaflowTask` as follows:
 
 ```python
 import luigi
@@ -173,7 +173,7 @@ from daps_utils import _MetaflowTask as MetaflowTask  # <-- Temporary until we'v
 
 class RootTask(luigi.WrapperTask):
 	def requires(self):
-		return MetaflowTask('examples/s3_example/s3_example.py', daps_pkg="REPONAME")
+		return MetaflowTask('examples/s3_example/s3_example.py')
 ```
 
 which you can run with (optionally with the `--local-scheduler` flag if running locally):
@@ -182,12 +182,13 @@ which you can run with (optionally with the `--local-scheduler` flag if running 
 $ PYTHONPATH=/path/to/REPONAME/:$PWD luigi --module examples_tasks RootTask [--local-scheduler]
 ```
 
+(FYI, the reason for `PYTHONPATH=/path/to/REPONAME` is so that `MetaflowTask` can resolve your flow directory. `PYTHONPATH=$PWD` on the other hand is so that `luigi` can resolve your pipeline, assuming that your pipeline is in the current working directory.)
+
 Note that the full set of arguments for `_MetaflowTask` are:
 
 | argument | value, default | description |
 | --- | --- | --- |
 | `flow_path` | `str` | Path to your flow, relative to the `flows` directory. |
-| `daps_pkg` | `str` | Name of the package (in your PYTHONPATH) where your `flows` directory can be found. |
 | `flow_tag` | `str` | Choice of either `"dev"` or `"production"`, to be passed as a `--tag` to your flow. |
 | `rebuild_base` | `bool`, `default=False` | Whether or not to rebuild the docker image from scratch (starting with `Dockerfile-base` then `Dockerfile`). Only do this if you have changed `Dockerfile-base`. |
 | `rebuild_flow` | `bool`, `default=True` | Whether or not to rebuild the docker image from the base image upwards (only implementing `Dockerfile`, not `Dockerfile-base`). This is done by default to include the latest changes to your flow. |
