@@ -76,7 +76,8 @@ def get_main_caller_pkg(frame):
     if caller.name == 'setup.py':
         return None
     # Exception for dockerized flows
-    if '/flows/' in caller and caller.startswith('/tmp/'):
+    _caller = str(caller)
+    if '/flows/' in _caller and _caller.startswith('/tmp/'):
         return None
     # Exception for users who don't want to use metaflowtask
     try:
