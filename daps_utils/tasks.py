@@ -10,10 +10,14 @@ import luigi
 from luigi.contrib.s3 import S3Target, S3PathTask
 from datetime import datetime as dt
 from importlib import import_module
+import inspect
 
 from .docker_utils import get_metaflow_config
 from .docker_utils import build_and_run_image
 from .breadcrumbs import pickup_breadcrumb
+
+from .parse_caller import get_main_caller_pkg
+CALLER_PKG = get_main_caller_pkg(inspect.currentframe())
 
 
 def import_pkg(daps_pkg):
@@ -32,7 +36,6 @@ def assert_hasattr(pkg, attr, pkg_name):
 class _MetaflowTask(luigi.Task):
     """Run metaflow Flows in Docker"""
     flow_path = luigi.Parameter()
-    daps_pkg = luigi.Parameter()
     flow_tag = luigi.ChoiceParameter(choices=["dev", "production"],
                                      var_type=str, default="dev")
     rebuild_base = luigi.BoolParameter(default=False)
@@ -59,7 +62,7 @@ class _MetaflowTask(luigi.Task):
         logs, tag = build_and_run_image(flow_path=self.flow_path,
                                         rebuild_base=self.rebuild_base,
                                         rebuild_flow=self.rebuild_flow,
-                                        pkg=import_pkg(self.daps_pkg),
+                                        pkg=CALLER_PKG,
                                         flow_kwargs={'tag': self.flow_tag,
                                                      **self.flow_kwargs},
                                         **self.container_kwargs)
