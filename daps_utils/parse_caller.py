@@ -40,7 +40,7 @@ def get_pkg_source(path, caller, git_root):
     """Recursively find the directory between the caller and the Git root
     which contains __init__.py and __initplus__.py files. The result is the
     module root path."""
-    p = Path(path).resolve()
+    p = Path(path)
     if is_metaflowtask_init_dir(p):
         return p.name
     if path != git_root:
@@ -66,7 +66,7 @@ def get_caller(f, ignore=['daps_utils/tasks.py', 'daps_utils/__init__.py']):
     skip = fpath.startswith('<frozen') or any(i in fpath for i in ignore)
     if skip and f.f_back is not None:
         return get_caller(f.f_back)
-    return Path(fpath)
+    return Path(fpath).resolve()
 
 
 def get_main_caller_pkg(frame):
@@ -78,6 +78,9 @@ def get_main_caller_pkg(frame):
     # Exception for dockerized flows
     _caller = str(caller)
     if '/flows/' in _caller and _caller.startswith('/tmp/'):
+        return None
+    # Exception for metaflow flows run from AWS batch
+    if _caller.startswith('/metaflow/'):
         return None
     # Exception for users who don't want to use metaflowtask
     try:
