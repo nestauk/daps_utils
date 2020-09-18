@@ -40,7 +40,7 @@ def get_pkg_source(path, caller, git_root):
     """Recursively find the directory between the caller and the Git root
     which contains __init__.py and __initplus__.py files. The result is the
     module root path."""
-    p = Path(path)
+    p = Path(path).resolve()
     if is_metaflowtask_init_dir(p):
         return p.name
     if path != git_root:
