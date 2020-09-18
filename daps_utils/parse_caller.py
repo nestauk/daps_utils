@@ -80,6 +80,7 @@ def get_main_caller_pkg(frame):
     if '/flows/' in _caller and _caller.startswith('/tmp/'):
         return None
     # Exception for metaflow flows run from AWS batch
+    print("===>", _caller)
     if _caller.startswith('/metaflow/'):
         return None
     # Exception for users who don't want to use metaflowtask
