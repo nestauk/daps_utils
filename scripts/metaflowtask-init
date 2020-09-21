@@ -44,7 +44,10 @@ function CopyInitPlus(){
     # Create __init__
     CheckAndCreate ${1} __init__.py
     echo 'from .__initplus__ import load_current_version, __basedir__, load_config' >> __init__.py
-    echo 'config = load_config()' >> __init__.py
+    echo 'try' >> __init__.py
+    echo '    config = load_config()' >> __init__.py
+    echo 'except ModuleNotFoundError as exc:' >> __init__.py
+    echo '    print(exc)' >> __init__.py
     echo '__version__ = load_current_version()' >> __init__.py
     echo ${BIGCOMMENT} >> __init__.py
     
