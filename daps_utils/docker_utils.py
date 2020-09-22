@@ -118,7 +118,7 @@ def parse_flow_path(flow_path):
 
 
 def build_flow_image(pkg, flow_path, rebuild_base,
-                     rebuild_flow, flow_kwargs):
+                     rebuild_flow, flow_kwargs, preflow_kwargs):
     """Build the base and flow images, and check that
     the dockerfile and namespace setup won't cause obvious clashes."""
     flow_dir, flow_name, tag = parse_flow_path(flow_path)
@@ -209,7 +209,7 @@ def run_image(img, **kwargs):
 
 def build_and_run_image(pkg, flow_path, rebuild_base=False,
                         rebuild_flow=True, flow_kwargs={},
-                        **kwargs):
+                        preflow_kwargs={}, **kwargs):
     """Build and run an image for your flow, by specifying
     the relative path to your flow (from the repo base).
     If local Dockerfile, Dockerfile-base and launch.sh are provided,
@@ -223,6 +223,6 @@ def build_and_run_image(pkg, flow_path, rebuild_base=False,
         kwargs: All other keyword arguments to pass to docker.containers.create
     """
     flow_tag = build_flow_image(pkg, flow_path, rebuild_base,
-                                rebuild_flow, flow_kwargs)
+                                rebuild_flow, flow_kwargs, preflow_kwargs)
     logs = run_image(flow_tag, **kwargs)
     return logs, flow_tag

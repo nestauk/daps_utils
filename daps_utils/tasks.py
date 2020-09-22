@@ -41,6 +41,7 @@ class _MetaflowTask(luigi.Task):
     rebuild_base = luigi.BoolParameter(default=False)
     rebuild_flow = luigi.BoolParameter(default=True)
     flow_kwargs = luigi.DictParameter(default={})
+    preflow_kwargs = luigi.DictParameter(default={})
     container_kwargs = luigi.DictParameter(default={})
     requires_task = luigi.TaskParameter(default=S3PathTask)
     requires_task_kwargs = luigi.DictParameter(default={})
@@ -65,6 +66,7 @@ class _MetaflowTask(luigi.Task):
                                         pkg=CALLER_PKG,
                                         flow_kwargs={'tag': self.flow_tag,
                                                      **self.flow_kwargs},
+                                        preflow_kwargs=self.preflow_kwargs,
                                         **self.container_kwargs)
         breadcrumb = pickup_breadcrumb(logs)
         out = self.output().open('w')
