@@ -15,7 +15,7 @@ import inspect
 from .docker_utils import get_metaflow_config
 from .docker_utils import build_and_run_image
 from .breadcrumbs import pickup_breadcrumb
-
+from .parameters import SqlAlchemyParameter
 from .parse_caller import get_main_caller_pkg
 CALLER_PKG = get_main_caller_pkg(inspect.currentframe())
 
