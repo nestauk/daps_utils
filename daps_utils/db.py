@@ -8,9 +8,9 @@ from sqlalchemy import inspect
 
 import logging
 import time
-
+import inspect as _inspect  # to avoid namespace clash with sqlalchemy
 from .parse_caller import get_main_caller_pkg
-CALLER_PKG = get_main_caller_pkg(inspect.currentframe())
+CALLER_PKG = get_main_caller_pkg(_inspect.currentframe())
 
 
 def object_as_dict(obj):
