@@ -166,7 +166,7 @@ class CurateTask(luigi.Task):
             Base.metadata.create_all(engine)
             # Insert the data
             insert_data(data, self.orm, session, low_memory=self.low_memory)
-        return self.output.touch()
+        return self.output().touch()
 
     def output(self):
         conf = CALLER_PKG.config['mysqldb']['mysqldb']
