@@ -87,8 +87,6 @@ class CurateTask(luigi.Task):
         model (SqlAlchemy model): A SqlAlchemy ORM, indicating the table
                                   of interest.
         flow_path (str): Path to your flow, relative to the flows directory.
-        flow_tag (str): Choice of either "dev" or "production", to be passed
-                        as a --tag to your flow.
         rebuild_base (bool): Whether or not to rebuild the docker image from
                              scratch (starting with Dockerfile-base then
                              Dockerfile). Only do this if you have changed
@@ -113,8 +111,6 @@ class CurateTask(luigi.Task):
     """
     orm = SqlAlchemyParameter()
     flow_path = luigi.Parameter()
-    flow_tag = luigi.ChoiceParameter(choices=["dev", "production"],
-                                     var_type=str, default="dev")
     rebuild_base = luigi.BoolParameter(default=False)
     rebuild_flow = luigi.BoolParameter(default=True)
     flow_kwargs = luigi.DictParameter(default={})
@@ -123,10 +119,12 @@ class CurateTask(luigi.Task):
     requires_task = luigi.TaskParameter(default=S3PathTask)
     requires_task_kwargs = luigi.DictParameter(default={})
     low_memory = luigi.BoolParameter(default=True)
-
+    test = luigi.BoolParameter(default=True)
+    
     def requires(self):
+        tag = 'dev' is self.test else 'production'
         return MetaflowTask(flow_path=self.flow_path,
-                            flow_tag=self.flow_tag,
+                            flow_tag=tag,
                             rebuild_base=self.rebuild_base,
                             rebuild_flow=self.rebuild_flow,
                             flow_kwargs=self.flow_kwargs,
@@ -152,6 +150,6 @@ class CurateTask(luigi.Task):
 
     def output(self):
         conf = CALLER_PKG.config['mysqldb']['mysqldb']
-        conf["database"] = 'dev' if test else 'production'
+        conf["database"] = 'dev' if self.test else 'production'
         conf["table"] = 'BatchExample'
         return MySqlTarget(update_id=self.task_id, **db_config)
