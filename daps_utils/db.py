@@ -152,7 +152,7 @@ def db_session(database="tests"):
     Returns:
         (:obj:`sqlalchemy.orm.session.Session`): generated session
     """
-    engine = get_mysql_engine(database="tests")
+    engine = get_mysql_engine(database=database)
     Session = try_until_allowed(sessionmaker, engine)
     session = try_until_allowed(Session)
     try:
