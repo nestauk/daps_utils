@@ -7,16 +7,22 @@ Common DAPS task types.
 
 import abc
 import luigi
+import boto3
+import re
+import json
 from luigi.contrib.s3 import S3Target, S3PathTask
+from luigi.contrib.mysqldb import MySqlTarget
 from datetime import datetime as dt
+from sqlalchemy_utils.functions import get_declarative_base
 from importlib import import_module
 import inspect
 
 from .docker_utils import get_metaflow_config
 from .docker_utils import build_and_run_image
 from .breadcrumbs import pickup_breadcrumb
-
+from .parameters import SqlAlchemyParameter
 from .parse_caller import get_main_caller_pkg
+from .db import db_session, insert_data
 CALLER_PKG = get_main_caller_pkg(inspect.currentframe())
 
 
@@ -33,7 +39,7 @@ def assert_hasattr(pkg, attr, pkg_name):
                              "Have you run 'metaflowtask-init' from your package root?")
 
 
-class _MetaflowTask(luigi.Task):
+class MetaflowTask(luigi.Task):
     """Run metaflow Flows in Docker"""
     flow_path = luigi.Parameter()
     flow_tag = luigi.ChoiceParameter(choices=["dev", "production"],
@@ -41,6 +47,7 @@ class _MetaflowTask(luigi.Task):
     rebuild_base = luigi.BoolParameter(default=False)
     rebuild_flow = luigi.BoolParameter(default=True)
     flow_kwargs = luigi.DictParameter(default={})
+    preflow_kwargs = luigi.DictParameter(default={})
     container_kwargs = luigi.DictParameter(default={})
     requires_task = luigi.TaskParameter(default=S3PathTask)
     requires_task_kwargs = luigi.DictParameter(default={})
@@ -65,6 +72,7 @@ class _MetaflowTask(luigi.Task):
                                         pkg=CALLER_PKG,
                                         flow_kwargs={'tag': self.flow_tag,
                                                      **self.flow_kwargs},
+                                        preflow_kwargs=self.preflow_kwargs,
                                         **self.container_kwargs)
         breadcrumb = pickup_breadcrumb(logs)
         out = self.output().open('w')
@@ -75,43 +83,72 @@ class _MetaflowTask(luigi.Task):
         return S3Target(f'{self.s3path}/{self.task_id}')
 
 
-class MetaflowTask(luigi.Task):
+class CurateTask(luigi.Task):
     """Run metaflow Flows in Docker, then curate the data
     and store the result in a database table.
 
     Args:
-        orm (SqlAlchemy ORM): A SqlAlchemy ORM, indicating the table 
-                              of interest.
-        flow_path (str): Subpath within the "flows" directory to your Flow.
-        date (datetime): Date for marking this task.
-        rebuild_base (bool): Rebuild the base Docker image?
-        rebuild_flow (bool): Rebuild the flow Docker image?
-        container_kwargs (dict): Additional kwargs for the Docker container.
-        requires_task (Task): Any tasks on what this should depend on. 
-                              NB: Do not use "requires", since this is 
-                              reserved for _MetaflowTask.
-        requires_task_kwargs (dict): Any arguments to pass to requires_task.
+        model (SqlAlchemy model): A SqlAlchemy ORM, indicating the table
+                                  of interest.
+        flow_path (str): Path to your flow, relative to the flows directory.
+        rebuild_base (bool): Whether or not to rebuild the docker image from
+                             scratch (starting with Dockerfile-base then
+                             Dockerfile). Only do this if you have changed
+                             Dockerfile-base.
+        rebuild_flow (bool): Whether or not to rebuild the docker image from
+                             the base image upwards (only implementing
+                             Dockerfile, not Dockerfile-base). This is done by
+                             default to include the latest changes to your flow
+        flow_kwargs (dict): Keyword arguments to pass to your flow as
+                            parameters (e.g. `{'foo':'bar'}` will be passed to
+                            the flow as `metaflow example.py run --foo bar`).
+        preflow_kwargs (dict): Keyword arguments to pass to metaflow BEFORE the
+                               run command (e.g. `{'foo':'bar'}` will be passed
+                               to the flow as `metaflow example.py --foo bar run`).
+        container_kwargs (dict): Additional keyword arguments to pass to the
+                                 docker run command, e.g. mem_limit for setting
+                                 the memory limit. See the python-docker docs
+                                 for full information.
+        requires_task (luigi.Task): Any task that this task is dependent on.
+        requires_task_kwargs (dict): Keyword arguments to pass to any dependent
+                                     task, if applicable.
     """
-    # orm = SqlAlchemyParameter()
-    # flow_path = luigi.Parameter()
-    # date = luigi.DateParameter(default=dt.now())
-    # rebuild_base = luigi.BoolParameter(default=False)
-    # rebuild_flow = luigi.BoolParameter(default=True)
-    # container_kwargs = luigi.DictParameter(default={})
-    # requires_task = luigi.TaskParameter(default=S3PathTask)
-    # requires_task_kwargs = luigi.DictParameter(default={})
+    orm = SqlAlchemyParameter()
+    flow_path = luigi.Parameter()
+    rebuild_base = luigi.BoolParameter(default=False)
+    rebuild_flow = luigi.BoolParameter(default=True)
+    flow_kwargs = luigi.DictParameter(default={})
+    preflow_kwargs = luigi.DictParameter(default={})
+    container_kwargs = luigi.DictParameter(default={})
+    requires_task = luigi.TaskParameter(default=S3PathTask)
+    requires_task_kwargs = luigi.DictParameter(default={})
+    low_memory = luigi.BoolParameter(default=True)
+    test = luigi.BoolParameter(default=True)
 
     def requires(self):
-        return _MetaflowTask(flow_path=self.flow_path,
-                             date=self.date,
-                             rebuild_base=self.rebuild_base,
-                             rebuild_flow=self.rebuild_flow,
-                             container_kwargs=self.container_kwargs,
-                             requires_task=self.requires_task,
-                             requires_task_kwargs=self.requires_task_kwargs)
+        tag = 'dev' if self.test else 'production'
+        return MetaflowTask(flow_path=self.flow_path,
+                            flow_tag=tag,
+                            rebuild_base=self.rebuild_base,
+                            rebuild_flow=self.rebuild_flow,
+                            flow_kwargs=self.flow_kwargs,
+                            preflow_kwargs=self.preflow_kwargs,
+                            container_kwargs=self.container_kwargs,
+                            requires_task=self.requires_task,
+                            requires_task_kwargs=self.requires_task_kwargs)
+
+    def retrieve_data(self, s3path, file_prefix):
+        s3 = boto3.resource('s3')
+        S3REGEX = "s3://(.*)/(metaflow/data/.*)"
+        bucket_name, prefix = re.findall(S3REGEX, s3path)[0]
+        bucket = s3.Bucket(bucket_name)
+        obj, = [obj for obj in bucket.objects.filter(Prefix=f"{prefix}/{file_prefix}")]
+        buffer = obj.get()['Body'].read().decode('utf-8')
+        data = json.loads(buffer)
+        return data
 
     @abc.abstractclassmethod
-    def curate_data(self):
+    def curate_data(self, s3_path):
         """Retrieves data from the metaflow task.
         Look for the file you need in self.s3path
         then curate the data into list --> dict
@@ -121,10 +158,20 @@ class MetaflowTask(luigi.Task):
 
     def run(self):
         self.s3path = self.input().open('r').read()
-        raise NotImplementedError
-        # data = self.curate_data()
-        # self.insert_data(self.orm, data)
+        data = self.curate_data(self.s3path)
+        with db_session(database='dev' if self.test else 'production') as session:
+            # Create the table if it doesn't already exist
+            engine = session.get_bind()
+            Base = get_declarative_base(self.orm)
+            Base.metadata.create_all(engine)
+            # Insert the data
+            insert_data(data, self.orm, session, low_memory=self.low_memory)
+        return self.output().touch()
 
     def output(self):
-        raise NotImplementedError        
-        # return MySqlTarget    
+        conf = CALLER_PKG.config['mysqldb']['mysqldb']
+        conf["database"] = 'dev' if self.test else 'production'
+        conf["table"] = 'BatchExample'
+        if 'port' in conf:
+            conf.pop('port')
+        return MySqlTarget(update_id=self.task_id, **conf)

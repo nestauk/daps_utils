@@ -22,7 +22,7 @@ def load(path):
             return yaml.safe_load(f)
         if path.suffix == '.json':
             return json.load(f)
-        if path.suffix in ('.cnf', '.conf'):
+        if path.suffix in ('.cnf', '.conf', '.config'):
             config = configparser.ConfigParser()
             config.read(path)
             return config
