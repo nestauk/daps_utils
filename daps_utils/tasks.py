@@ -33,7 +33,7 @@ def assert_hasattr(pkg, attr, pkg_name):
                              "Have you run 'metaflowtask-init' from your package root?")
 
 
-class _MetaflowTask(luigi.Task):
+class MetaflowTask(luigi.Task):
     """Run metaflow Flows in Docker"""
     flow_path = luigi.Parameter()
     flow_tag = luigi.ChoiceParameter(choices=["dev", "production"],
@@ -77,40 +77,60 @@ class _MetaflowTask(luigi.Task):
         return S3Target(f'{self.s3path}/{self.task_id}')
 
 
-class MetaflowTask(luigi.Task):
+class CurateTask(luigi.Task):
     """Run metaflow Flows in Docker, then curate the data
     and store the result in a database table.
 
     Args:
-        orm (SqlAlchemy ORM): A SqlAlchemy ORM, indicating the table 
-                              of interest.
-        flow_path (str): Subpath within the "flows" directory to your Flow.
-        date (datetime): Date for marking this task.
-        rebuild_base (bool): Rebuild the base Docker image?
-        rebuild_flow (bool): Rebuild the flow Docker image?
-        container_kwargs (dict): Additional kwargs for the Docker container.
-        requires_task (Task): Any tasks on what this should depend on. 
-                              NB: Do not use "requires", since this is 
-                              reserved for _MetaflowTask.
-        requires_task_kwargs (dict): Any arguments to pass to requires_task.
+        model (SqlAlchemy model): A SqlAlchemy ORM, indicating the table
+                                  of interest.
+        flow_path (str): Path to your flow, relative to the flows directory.
+        flow_tag (str): Choice of either "dev" or "production", to be passed
+                        as a --tag to your flow.
+        rebuild_base (bool): Whether or not to rebuild the docker image from
+                             scratch (starting with Dockerfile-base then
+                             Dockerfile). Only do this if you have changed
+                             Dockerfile-base.
+        rebuild_flow (bool): Whether or not to rebuild the docker image from
+                             the base image upwards (only implementing
+                             Dockerfile, not Dockerfile-base). This is done by
+                             default to include the latest changes to your flow
+        flow_kwargs (dict): Keyword arguments to pass to your flow as
+                            parameters (e.g. `{'foo':'bar'}` will be passed to
+                            the flow as `metaflow example.py run --foo bar`).
+        preflow_kwargs (dict): Keyword arguments to pass to metaflow BEFORE the
+                               run command (e.g. `{'foo':'bar'}` will be passed
+                               to the flow as `metaflow example.py --foo bar run`).
+        container_kwargs (dict): Additional keyword arguments to pass to the
+                                 docker run command, e.g. mem_limit for setting
+                                 the memory limit. See the python-docker docs
+                                 for full information.
+        requires_task (luigi.Task): Any task that this task is dependent on.
+        requires_task_kwargs (dict): Keyword arguments to pass to any dependent
+                                     task, if applicable.
     """
-    # orm = SqlAlchemyParameter()
-    # flow_path = luigi.Parameter()
-    # date = luigi.DateParameter(default=dt.now())
-    # rebuild_base = luigi.BoolParameter(default=False)
-    # rebuild_flow = luigi.BoolParameter(default=True)
-    # container_kwargs = luigi.DictParameter(default={})
-    # requires_task = luigi.TaskParameter(default=S3PathTask)
-    # requires_task_kwargs = luigi.DictParameter(default={})
+    orm = SqlAlchemyParameter()
+    flow_path = luigi.Parameter()
+    flow_tag = luigi.ChoiceParameter(choices=["dev", "production"],
+                                     var_type=str, default="dev")
+    rebuild_base = luigi.BoolParameter(default=False)
+    rebuild_flow = luigi.BoolParameter(default=True)
+    flow_kwargs = luigi.DictParameter(default={})
+    preflow_kwargs = luigi.DictParameter(default={})
+    container_kwargs = luigi.DictParameter(default={})
+    requires_task = luigi.TaskParameter(default=S3PathTask)
+    requires_task_kwargs = luigi.DictParameter(default={})
 
     def requires(self):
-        return _MetaflowTask(flow_path=self.flow_path,
-                             date=self.date,
-                             rebuild_base=self.rebuild_base,
-                             rebuild_flow=self.rebuild_flow,
-                             container_kwargs=self.container_kwargs,
-                             requires_task=self.requires_task,
-                             requires_task_kwargs=self.requires_task_kwargs)
+        return MetaflowTask(flow_path=self.flow_path,
+                            flow_tag=self.flow_tag,
+                            rebuild_base=self.rebuild_base,
+                            rebuild_flow=self.rebuild_flow,
+                            flow_kwargs=self.flow_kwargs,
+                            preflow_kwargs=self.preflow_kwargs,
+                            container_kwargs=self.container_kwargs,
+                            requires_task=self.requires_task,
+                            requires_task_kwargs=self.requires_task_kwargs)
 
     @abc.abstractclassmethod
     def curate_data(self):
@@ -128,5 +148,5 @@ class MetaflowTask(luigi.Task):
         # self.insert_data(self.orm, data)
 
     def output(self):
-        raise NotImplementedError        
-        # return MySqlTarget    
+        raise NotImplementedError
+        # return MySqlTarget
