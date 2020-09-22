@@ -204,7 +204,8 @@ Note that the full set of arguments for `_MetaflowTask` are:
 - `flow_tag` (`str`): Choice of either `"dev"` or `"production"`, to be passed as a `--tag` to your flow.                     
 - `rebuild_base` (`bool`, `default=False`): Whether or not to rebuild the docker image from scratch (starting with `Dockerfile-base` then `Dockerfile`). Only do this if you have changed `Dockerfile-base`.
 - `rebuild_flow` (`bool`, `default=True`): Whether or not to rebuild the docker image from the base image upwards (only implementing `Dockerfile`, not `Dockerfile-base`). This is done by default to include the latest changes to your flow.
-- `flow_kwargs` (`dict`, `default={}`): Keyword arguments to pass to your flow as parameters (e.g. `{'foo':'bar'}` will be passed to the flow as `--foo bar`).
+- `flow_kwargs` (`dict`, `default={}`): Keyword arguments to pass to your flow as parameters (e.g. `{'foo':'bar'}` will be passed to the flow as `metaflow example.py run --foo bar`).
+- `preflow_kwargs` (`dict`, `default={}`): Keyword arguments to pass to metaflow BEFORE the run command (e.g. `{'foo':'bar'}` will be passed to the flow as `metaflow example.py --foo bar run`).
 - `container_kwargs` (`dict`, `default={}`): Additional keyword arguments to pass to the `docker run` command, e.g. `mem_limit` for setting the memory limit. See [the python-docker docs](https://docker-py.readthedocs.io/en/stable/containers.html) for full information. 
 - `requires_task` (`luigi.Task`, `default=None`): Any task that this task is dependent on.
 - `requires_task_kwargs` (`dict`, `default={}`): Keyword arguments to pass to any dependent task, if applicable.

@@ -158,6 +158,8 @@ def build_flow_image(pkg, flow_path, rebuild_base,
     build_args = {'METAFLOWCONFIG': json.dumps(METAFLOW_CONFIG),
                   'METAFLOW_RUN_PARAMETERS': ' '.join(f'--{k} {v}' for k, v in
                                                       flow_kwargs.items()),
+                  'METAFLOW_PRERUN_PARAMETERS': ' '.join(f'--{k} {v}' for k, v in
+                                                         preflow_kwargs.items()),                  
                   'LAUNCHSH': fullpath_to_relative(pkg, launchsh),
                   'REPONAME': pkg.__name__,
                   'USER': getuser(),
