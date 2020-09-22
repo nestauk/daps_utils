@@ -7,6 +7,9 @@ Common DAPS task types.
 
 import abc
 import luigi
+import boto3
+import re
+import json
 from luigi.contrib.s3 import S3Target, S3PathTask
 from luigi.contrib.mysqldb import MySqlTarget
 from datetime import datetime as dt
@@ -120,7 +123,7 @@ class CurateTask(luigi.Task):
     requires_task_kwargs = luigi.DictParameter(default={})
     low_memory = luigi.BoolParameter(default=True)
     test = luigi.BoolParameter(default=True)
-    
+
     def requires(self):
         tag = 'dev' if self.test else 'production'
         return MetaflowTask(flow_path=self.flow_path,
@@ -132,6 +135,16 @@ class CurateTask(luigi.Task):
                             container_kwargs=self.container_kwargs,
                             requires_task=self.requires_task,
                             requires_task_kwargs=self.requires_task_kwargs)
+
+    def retrieve_data(self, s3path, file_prefix):
+        s3 = boto3.resource('s3')
+        S3REGEX = "s3://(.*)/(metaflow/data/.*)"
+        bucket_name, prefix = re.findall(S3REGEX, s3path)[0]
+        bucket = s3.Bucket(bucket_name)
+        obj, = [obj for obj in bucket.objects.filter(Prefix=f"{prefix}/{file_prefix}")]
+        buffer = obj.get()['Body'].read().decode('utf-8')
+        data = json.loads(buffer)
+        return data
 
     @abc.abstractclassmethod
     def curate_data(self, s3_path):
