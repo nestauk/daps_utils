@@ -21,7 +21,7 @@ from .docker_utils import build_and_run_image
 from .breadcrumbs import pickup_breadcrumb
 from .parameters import SqlAlchemyParameter
 from .parse_caller import get_main_caller_pkg
-from .db import db_session
+from .db import db_session, insert_data
 CALLER_PKG = get_main_caller_pkg(inspect.currentframe())
 
 
