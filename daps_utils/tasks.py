@@ -152,4 +152,4 @@ class CurateTask(luigi.Task):
         conf = CALLER_PKG.config['mysqldb']['mysqldb']
         conf["database"] = 'dev' if self.test else 'production'
         conf["table"] = 'BatchExample'
-        return MySqlTarget(update_id=self.task_id, **db_config)
+        return MySqlTarget(update_id=self.task_id, **conf)
