@@ -8,6 +8,7 @@ Common DAPS task types.
 import abc
 import luigi
 from luigi.contrib.s3 import S3Target, S3PathTask
+from luigi.contrib.mysqldb import MySqlTarget
 from datetime import datetime as dt
 from importlib import import_module
 import inspect
@@ -17,6 +18,7 @@ from .docker_utils import build_and_run_image
 from .breadcrumbs import pickup_breadcrumb
 from .parameters import SqlAlchemyParameter
 from .parse_caller import get_main_caller_pkg
+from .db import db_session
 CALLER_PKG = get_main_caller_pkg(inspect.currentframe())
 
 
@@ -120,6 +122,7 @@ class CurateTask(luigi.Task):
     container_kwargs = luigi.DictParameter(default={})
     requires_task = luigi.TaskParameter(default=S3PathTask)
     requires_task_kwargs = luigi.DictParameter(default={})
+    low_memory = luigi.BoolParameter(default=True)
 
     def requires(self):
         return MetaflowTask(flow_path=self.flow_path,
@@ -143,10 +146,12 @@ class CurateTask(luigi.Task):
 
     def run(self):
         self.s3path = self.input().open('r').read()
-        raise NotImplementedError
-        # data = self.curate_data()
-        # self.insert_data(self.orm, data)
+        data = self.curate_data(self.s3path)
+        with db_session() as session:
+            insert_data(data, self.orm, session, low_memory=self.low_memory)
 
     def output(self):
-        raise NotImplementedError
-        # return MySqlTarget
+        conf = CALLER_PKG.config['mysqldb']['mysqldb']
+        conf["database"] = 'dev' if test else 'production'
+        conf["table"] = 'BatchExample'
+        return MySqlTarget(update_id=self.task_id, **db_config)
