@@ -13,6 +13,7 @@ import json
 from luigi.contrib.s3 import S3Target, S3PathTask
 from luigi.contrib.mysqldb import MySqlTarget
 from datetime import datetime as dt
+from sqlalchemy_utils.functions import get_declarative_base
 from importlib import import_module
 import inspect
 
@@ -158,7 +159,12 @@ class CurateTask(luigi.Task):
     def run(self):
         self.s3path = self.input().open('r').read()
         data = self.curate_data(self.s3path)
-        with db_session() as session:
+        with db_session(database='dev' if self.test else 'production') as session:
+            # Create the table if it doesn't already exist
+            engine = session.get_bind()
+            Base = get_declarative_base(self.orm)
+            Base.metadata.create_all(engine)
+            # Insert the data
             insert_data(data, self.orm, session, low_memory=self.low_memory)
 
     def output(self):
