@@ -169,7 +169,7 @@ You can then run add your "`luigi`" `MetaflowTask` as follows:
 
 ```python
 import luigi
-from daps_utils import _MetaflowTask as MetaflowTask  # <-- Temporary until we've got daps_utils.MetaflowTask up and running
+from daps_utils import MetaflowTask
 
 class RootTask(luigi.WrapperTask):
 	def requires(self):
