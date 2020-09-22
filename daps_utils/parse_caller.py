@@ -54,7 +54,8 @@ def get_pkg_source(path, caller, git_root):
                                 'using the "metaflowtask-init".')
 
 
-def get_caller(f, ignore=['daps_utils/tasks.py', 'daps_utils/__init__.py']):
+def get_caller(f, ignore=['daps_utils/tasks.py', 'daps_utils/__init__.py',
+                          'daps_utils/db.py']):
     """Get the full path to the namespace where daps_utils is first imported
     in runtime. Note that that introspection tool finds a bunch 
     of "frozen" imports (which are artefacts of the python import system, 
