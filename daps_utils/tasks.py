@@ -136,7 +136,7 @@ class CurateTask(luigi.Task):
                             requires_task_kwargs=self.requires_task_kwargs)
 
     @abc.abstractclassmethod
-    def curate_data(self):
+    def curate_data(self, s3_path):
         """Retrieves data from the metaflow task.
         Look for the file you need in self.s3path
         then curate the data into list --> dict
