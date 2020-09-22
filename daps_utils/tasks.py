@@ -122,7 +122,7 @@ class CurateTask(luigi.Task):
     test = luigi.BoolParameter(default=True)
     
     def requires(self):
-        tag = 'dev' is self.test else 'production'
+        tag = 'dev' if self.test else 'production'
         return MetaflowTask(flow_path=self.flow_path,
                             flow_tag=tag,
                             rebuild_base=self.rebuild_base,
