@@ -142,7 +142,7 @@ There are only a small number of requirements for your flow to run via `Metaflow
 
 - Firstly, make sure you are using the `@talk_to_luigi` class decorator on your flow.
 - If your flow has any external dependencies, you will need to include a `requirements.txt` in your flow directory to specify the python environment.
-- If your flow will not run out-of-the-box on Amazon Linux 2, then you'll need to specify your container environemtn. Take a look at the `docker` environment in `config/metaflowtask` (the base environment is built by `Dockerfile-base`, which is then built on-top-of using `Dockerfile`). If you need your own base environment you should include a `Dockerfile-base` in the flow directory (and also a `Dockerfile`), or just a slight variation you should just include a `Dockerfile` in your flow directory.
+- If your flow will not run out-of-the-box on Amazon Linux 2, then you'll need to specify your container environment. Take a look at the `docker` environment in `config/metaflowtask` (the base environment is built by `Dockerfile-base`, which is then built on-top-of using `Dockerfile`). If you need your own base environment you should include a `Dockerfile-base` in the flow directory (and also a `Dockerfile`), or just a slight variation you should just include a `Dockerfile` in your flow directory.
 - Similarly, if you need the entrypoint / runtime to be more sophisticated than `python path/to/flow.py run`, you can specify custom behaviour by copying and editing the `config/metaflowtask/launch.sh` script to your flow directory.
 
 Therefore, the minimum your flow directory should look like should be:
