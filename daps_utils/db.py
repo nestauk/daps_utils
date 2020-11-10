@@ -28,8 +28,9 @@ def cast_as_sql_python_type(field, data):
     Returns:
         _data: The data field, cast as native python equivalent of the field.
     """
-    _data = field.type.python_type(data)
-    if field.type.python_type is str:
+    python_type = field.type.python_type
+    _data = python_type(data) if not isinstance(data, python_type) else data
+    if python_type is str:
         # Include the VARCHAR(n) case
         n = field.type.length if field.type.length < len(_data) else None
         _data = _data[:n]
