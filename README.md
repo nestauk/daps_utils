@@ -1,4 +1,4 @@
-daps_utils [![Build Status](https://travis-ci.org/nestauk/daps_utils.svg?branch=dev)](https://travis-ci.org/nestauk/daps_utils)
+daps_utils [![Build Status](https://travis-ci.com/nestauk/daps_utils.svg?branch=dev)](https://travis-ci.com/nestauk/daps_utils)
 ==========
 
 Tools for setting up and running pipelines in a Data Analytics and Production System (DAPS).
