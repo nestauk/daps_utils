@@ -1,4 +1,4 @@
-boto3==1.9.159
+boto3==1.16.26
 pytest==4.6.0
 metaflow==2.0.5
 luigi==3.0.1
