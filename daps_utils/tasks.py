@@ -39,7 +39,32 @@ def assert_hasattr(pkg, attr, pkg_name):
                              "Have you run 'metaflowtask-init' from your package root?")
 
 
-class MetaflowTask(luigi.Task):
+def prune_outputs(task, force_upstream):
+    """Remove all outputs from the task. Optionally force this
+    upon all upstream tasks."""
+    outputs = luigi.task.flatten(task.output())
+    for out in filter(lambda out: out.exists(), outputs):
+        try:
+            out.remove()
+        except AttributeError:
+            raise NotImplementedError(f'No "remove" method implemented for {out}')
+    children = (luigi.task.flatten(task.requires()) if force_upstream else [])
+    for child in children:
+        prune_outputs(task=child, force_upstream=force_upstream)
+        
+
+class ForceableTask(luigi.Task):
+    """A luigi task which can be forceably rerun"""
+    force          = luigi.BoolParameter(significant=False, default=False)
+    force_upstream = luigi.BoolParameter(significant=False, default=False)
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        if self.force or self.force_upstream:
+            prune_outputs(task=self, force_upstream=self.force_upstream)
+
+
+class MetaflowTask(ForceableTask):
     """Run metaflow Flows in Docker"""
     flow_path = luigi.Parameter()
     flow_tag = luigi.ChoiceParameter(choices=["dev", "production"],
@@ -83,7 +108,7 @@ class MetaflowTask(luigi.Task):
         return S3Target(f'{self.s3path}/{self.task_id}')
 
 
-class CurateTask(luigi.Task):
+class CurateTask(ForceableTask):
     """Run metaflow Flows in Docker, then curate the data
     and store the result in a database table.
 
