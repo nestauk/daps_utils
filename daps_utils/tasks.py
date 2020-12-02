@@ -104,7 +104,7 @@ class MetaflowTask(ForceableTask):
     requires_task = luigi.TaskParameter(default=S3PathTask)
     requires_task_kwargs = luigi.DictParameter(default={})
 
-    @ property
+    @property
     def s3path(self):
         metaflow_config = get_metaflow_config()
         return metaflow_config['METAFLOW_DATASTORE_SYSROOT_S3']
@@ -200,7 +200,7 @@ class CurateTask(ForceableTask):
         data = json.loads(buffer)
         return data
 
-    @ abc.abstractclassmethod
+    @abc.abstractclassmethod
     def curate_data(self, s3_path):
         """Retrieves data from the metaflow task.
         Look for the file you need in self.s3path
