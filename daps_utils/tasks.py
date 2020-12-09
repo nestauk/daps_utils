@@ -39,7 +39,59 @@ def assert_hasattr(pkg, attr, pkg_name):
                              "Have you run 'metaflowtask-init' from your package root?")
 
 
-class MetaflowTask(luigi.Task):
+def toggle_force_to_false(func):
+    """Toggle self.force permanently to be False. This is required towards
+    the end of the task's lifecycle, when we need to know the true value
+    of Target.exists()"""
+
+    def wrapper(self, *args, **kwargs):
+        self.force = False
+        return func(self, *args, **kwargs)
+    return wrapper
+
+
+def toggle_exists(output_func):
+    """Patch Target.exists() if self.force is True"""
+
+    def wrapper(self):
+        outputs = output_func(self)
+        for out in luigi.task.flatten(outputs):
+            # Patch Target.exists() to return False
+            if self.force:
+                out.exists = lambda *args, **kwargs: False
+            # "Unpatch" Target.exists() to it's original form
+            else:
+                out.exists = lambda *args, **kwargs: (
+                    out.__class__.exists(out, *args, **kwargs))
+        return outputs
+    return wrapper
+
+
+class ForceableTask(luigi.Task):
+    """A luigi task which can be forceably rerun"""
+    force = luigi.BoolParameter(significant=False, default=False)
+    force_upstream = luigi.BoolParameter(significant=False, default=False)
+
+    def __init__(self,  *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        # Force children to be rerun
+        if self.force_upstream:
+            self.force = True
+            children = luigi.task.flatten(self.requires())
+            for child in children:
+                child.force = True
+
+    def __init_subclass__(cls):
+        super().__init_subclass__()
+        cls.output = toggle_exists(cls.output)
+        # Later on in the task's lifecycle, run and trigger_event are called so we can use
+        # these as an opportunity to toggle "force = False" to allow the Target.exists()
+        # to return it's true value at the end of the Task
+        cls.run = toggle_force_to_false(cls.run)
+        cls.trigger_event = toggle_force_to_false(cls.trigger_event)
+
+
+class MetaflowTask(ForceableTask):
     """Run metaflow Flows in Docker"""
     flow_path = luigi.Parameter()
     flow_tag = luigi.ChoiceParameter(choices=["dev", "production"],
@@ -83,7 +135,7 @@ class MetaflowTask(luigi.Task):
         return S3Target(f'{self.s3path}/{self.task_id}')
 
 
-class CurateTask(luigi.Task):
+class CurateTask(ForceableTask):
     """Run metaflow Flows in Docker, then curate the data
     and store the result in a database table.
 
@@ -142,7 +194,8 @@ class CurateTask(luigi.Task):
         S3REGEX = "s3://(.*)/(metaflow/data/.*)"
         bucket_name, prefix = re.findall(S3REGEX, s3path)[0]
         bucket = s3.Bucket(bucket_name)
-        obj, = [obj for obj in bucket.objects.filter(Prefix=f"{prefix}/{file_prefix}")]
+        obj, = [obj for obj in bucket.objects.filter(
+            Prefix=f"{prefix}/{file_prefix}")]
         buffer = obj.get()['Body'].read().decode('utf-8')
         data = json.loads(buffer)
         return data
