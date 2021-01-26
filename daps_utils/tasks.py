@@ -107,7 +107,6 @@ class MetaflowTask(ForceableTask):
     @property
     def s3path(self):
         metaflow_config = get_metaflow_config()
-        print("===>", metaflow_config)
         return metaflow_config['METAFLOW_DATASTORE_SYSROOT_S3']
 
     def requires(self):
