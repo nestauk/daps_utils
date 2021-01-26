@@ -9,9 +9,9 @@ function DUtilsBaseDir(){
 }
 
 function CreateConfig(){
-    mkdir -p config/metaflowtask &> /dev/null
-    cp $(DUtilsBaseDir)/config/metaflowtask/* config/metaflowtask/
-    echo "${1}/config/metaflowtask/ has been created or updated, with a Dockerfile, Dockerfile-base and launch.sh"
+    mkdir -p ${2}/metaflowtask &> /dev/null
+    cp $(DUtilsBaseDir)/config/metaflowtask/* ${2}/metaflowtask/
+    echo "${1}/${2}/metaflowtask/ has been created or updated, with a Dockerfile, Dockerfile-base and launch.sh"
 }
 
 function CreateFlowsDir(){
@@ -74,7 +74,8 @@ if [ "${PWD##*/}" != "${DU_LOCAL_REPO_NAME}" ]; then
 fi
 # Set up MetaflowTask structure
 cd ${DU_LOCAL_REPO_NAME}
-CreateConfig ${DU_LOCAL_REPO_NAME}
+CreateConfig ${DU_LOCAL_REPO_NAME} config
+CreateConfig ${DU_LOCAL_REPO_NAME} config/actions-config
 CreateFlowsDir ${DU_LOCAL_REPO_NAME}
 CopyInitPlus ${DU_LOCAL_REPO_NAME}
 AddRequirements ${DU_LOCAL_REPO_NAME}
