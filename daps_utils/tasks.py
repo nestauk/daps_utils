@@ -69,6 +69,60 @@ def toggle_exists(output_func):
     return wrapper
 
 
+class DapsTaskMixinBase:
+    """
+    Base class for accessing the database name, assuming that
+    a property or parameter 'test' as been set.
+
+    The `db_name` parameter is similarly a standard we have long settled with,
+    and is an unnecessary source of repetition.
+    """
+    @property
+    def db_name(self):
+        if "pytest" in sys.modules:  # True if running from pytest
+            return 'test'
+        return 'dev' if self.test else 'production'
+
+
+class DapsRootTask(luigi.WrapperTask, DapsTaskMixinBase):
+    """
+    On top of the DapsTaskMixinBase, this base class includes:
+
+    - A `production` luigi.Parameter by default
+    - A `@property` called `test` which returns to opposite of `production`
+
+    Note that the design choice is made for `production` to be a parameter,
+    so that running `production=True` is neither the default choice nor
+    something that can be run without explicit approval.
+
+    On the other hand it is frequently more convienent in the codebase to make
+    exceptions for a `test` mode. For this reason, frequently specifying
+    `not production` is clunky and so the `test` property exists for this
+    purpose.
+    """
+    production = luigi.BoolParameter(default=False)
+
+    @property
+    def test(self):
+        """Opposite of production"""
+        return not self.production
+
+
+class DapsTaskMixin(DapsTaskMixinBase):
+    """
+    On top of the DapsTaskMixinBase, this base class includes:
+
+    - A `test` luigi.Parameter by default
+    - A `@property` called `production` which returns to opposite of `test`
+    """
+    test = luigi.BoolParameter()
+
+    @property
+    def production(self):
+        """Opposite of test"""
+        return not self.test
+
+
 class ForceableTask(luigi.Task):
     """A luigi task which can be forceably rerun"""
     force = luigi.BoolParameter(significant=False, default=False)
@@ -227,57 +281,3 @@ class CurateTask(ForceableTask, DapsTaskMixin):
         conf["table"] = '[daps-utils]'  # Just a dummy name
         conf.pop('port', None)
         return MySqlTarget(update_id=self.task_id, **conf)
-
-
-class DapsRootTask(RootTask, DapsTaskMixinBase):
-    """
-    On top of the DapsTaskMixinBase, this base class includes:
-
-    - A `production` luigi.Parameter by default
-    - A `@property` called `test` which returns to opposite of `production`
-
-    Note that the design choice is made for `production` to be a parameter,
-    so that running `production=True` is neither the default choice nor
-    something that can be run without explicit approval.
-
-    On the other hand it is frequently more convienent in the codebase to make
-    exceptions for a `test` mode. For this reason, frequently specifying
-    `not production` is clunky and so the `test` property exists for this
-    purpose.
-    """
-    production = luigi.BoolParameter(default=False)
-
-    @property
-    def test(self):
-        """Opposite of production"""
-        return not self.production
-
-
-class DapsTaskMixin(DapsTaskMixinBase):
-    """
-    On top of the DapsTaskMixinBase, this base class includes:
-
-    - A `test` luigi.Parameter by default
-    - A `@property` called `production` which returns to opposite of `test`
-    """
-    test = luigi.BoolParameter()
-
-    @property
-    def production(self):
-        """Opposite of test"""
-        return not self.test
-
-
-class DapsTaskMixinBase:
-    """
-    Base class for accessing the database name, assuming that
-    a property or parameter 'test' as been set.
-
-    The `db_name` parameter is similarly a standard we have long settled with,
-    and is an unnecessary source of repetition.
-    """
-    @property
-    def db_name(self):
-        if "pytest" in sys.modules:  # True if running from pytest
-            return 'test'
-        return 'dev' if self.test else 'production'
