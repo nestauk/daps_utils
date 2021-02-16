@@ -6,23 +6,25 @@ Common DAPS task types.
 """
 
 import abc
-import luigi
-import boto3
-import re
-import json
-from luigi.contrib.s3 import S3Target, S3PathTask
-from luigi.contrib.mysqldb import MySqlTarget
-from datetime import datetime as dt
-from sqlalchemy_utils.functions import get_declarative_base
-from importlib import import_module
 import inspect
+import json
+import re
+import sys
+from datetime import datetime as dt
+from importlib import import_module
 
-from .docker_utils import get_metaflow_config
-from .docker_utils import build_and_run_image
+import boto3
+import luigi
+from luigi.contrib.mysqldb import MySqlTarget
+from luigi.contrib.s3 import S3PathTask, S3Target
+from sqlalchemy_utils.functions import get_declarative_base
+
 from .breadcrumbs import pickup_breadcrumb
+from .db import db_session, insert_data
+from .docker_utils import build_and_run_image, get_metaflow_config
 from .parameters import SqlAlchemyParameter
 from .parse_caller import get_main_caller_pkg
-from .db import db_session, insert_data
+
 CALLER_PKG = get_main_caller_pkg(inspect.currentframe())
 
 
@@ -135,7 +137,7 @@ class MetaflowTask(ForceableTask):
         return S3Target(f'{self.s3path}/{self.task_id}')
 
 
-class CurateTask(ForceableTask):
+class CurateTask(ForceableTask, DapsTaskMixin):
     """Run metaflow Flows in Docker, then curate the data
     and store the result in a database table.
 
@@ -175,12 +177,10 @@ class CurateTask(ForceableTask):
     requires_task = luigi.TaskParameter(default=S3PathTask)
     requires_task_kwargs = luigi.DictParameter(default={})
     low_memory = luigi.BoolParameter(default=True)
-    test = luigi.BoolParameter(default=True)
 
     def requires(self):
-        tag = 'dev' if self.test else 'production'
         return MetaflowTask(flow_path=self.flow_path,
-                            flow_tag=tag,
+                            flow_tag=self.db_name,
                             rebuild_base=self.rebuild_base,
                             rebuild_flow=self.rebuild_flow,
                             flow_kwargs=self.flow_kwargs,
@@ -212,7 +212,7 @@ class CurateTask(ForceableTask):
     def run(self):
         self.s3path = self.input().open('r').read()
         data = self.curate_data(self.s3path)
-        with db_session(database='dev' if self.test else 'production') as session:
+        with db_session(database=self.db_name) as session:
             # Create the table if it doesn't already exist
             engine = session.get_bind()
             Base = get_declarative_base(self.orm)
@@ -223,8 +223,61 @@ class CurateTask(ForceableTask):
 
     def output(self):
         conf = CALLER_PKG.config['mysqldb']['mysqldb']
-        conf["database"] = 'dev' if self.test else 'production'
-        conf["table"] = 'BatchExample'
-        if 'port' in conf:
-            conf.pop('port')
+        conf["database"] = self.db_name
+        conf["table"] = '[daps-utils]'  # Just a dummy name
+        conf.pop('port', None)
         return MySqlTarget(update_id=self.task_id, **conf)
+
+
+class DapsRootTask(RootTask, DapsTaskMixinBase):
+    """
+    On top of the DapsTaskMixinBase, this base class includes:
+
+    - A `production` luigi.Parameter by default
+    - A `@property` called `test` which returns to opposite of `production`
+
+    Note that the design choice is made for `production` to be a parameter,
+    so that running `production=True` is neither the default choice nor
+    something that can be run without explicit approval.
+
+    On the other hand it is frequently more convienent in the codebase to make
+    exceptions for a `test` mode. For this reason, frequently specifying
+    `not production` is clunky and so the `test` property exists for this
+    purpose.
+    """
+    production = luigi.BoolParameter(default=False)
+
+    @property
+    def test(self):
+        """Opposite of production"""
+        return not self.production
+
+
+class DapsTaskMixin(DapsTaskMixinBase):
+    """
+    On top of the DapsTaskMixinBase, this base class includes:
+
+    - A `test` luigi.Parameter by default
+    - A `@property` called `production` which returns to opposite of `test`
+    """
+    test = luigi.BoolParameter()
+
+    @property
+    def production(self):
+        """Opposite of test"""
+        return not self.test
+
+
+class DapsTaskMixinBase:
+    """
+    Base class for accessing the database name, assuming that
+    a property or parameter 'test' as been set.
+
+    The `db_name` parameter is similarly a standard we have long settled with,
+    and is an unnecessary source of repetition.
+    """
+    @property
+    def db_name(self):
+        if "pytest" in sys.modules:  # True if running from pytest
+            return 'test'
+        return 'dev' if self.test else 'production'
