@@ -12,6 +12,7 @@ import re
 import sys
 from datetime import datetime as dt
 from importlib import import_module
+import inspect
 
 import boto3
 import luigi
@@ -74,7 +75,7 @@ class DapsTaskMixinBase:
     Base class for accessing the database name, assuming that
     a property or parameter 'test' as been set.
 
-    The `db_name` parameter is similarly a standard we have long settled with,
+    The `db_name` parameter is a standard we have long settled with,
     and is an unnecessary source of repetition.
     """
     @property
@@ -248,11 +249,10 @@ class CurateTask(ForceableTask, DapsTaskMixin):
         S3REGEX = "s3://(.*)/(metaflow/data/.*)"
         bucket_name, prefix = re.findall(S3REGEX, s3path)[0]
         bucket = s3.Bucket(bucket_name)
-        obj, = [obj for obj in bucket.objects.filter(
-            Prefix=f"{prefix}/{file_prefix}")]
-        buffer = obj.get()['Body'].read().decode('utf-8')
-        data = json.loads(buffer)
-        return data
+        _prefix = f"{prefix}/{file_prefix}"
+        for obj in bucket.objects.filter(Prefix=_prefix):
+            buffer = obj.get()['Body'].read().decode('utf-8')
+            yield json.loads(buffer)
 
     @abc.abstractclassmethod
     def curate_data(self, s3_path):
@@ -263,16 +263,24 @@ class CurateTask(ForceableTask, DapsTaskMixin):
         """
         pass
 
-    def run(self):
-        self.s3path = self.input().open('r').read()
-        data = self.curate_data(self.s3path)
+    def insert_data(self, data):
         with db_session(database=self.db_name) as session:
             # Create the table if it doesn't already exist
             engine = session.get_bind()
             Base = get_declarative_base(self.orm)
             Base.metadata.create_all(engine)
             # Insert the data
-            insert_data(data, self.orm, session, low_memory=self.low_memory)
+            insert_data(data, self.orm, session,
+                        low_memory=self.low_memory)
+
+    def run(self):
+        s3path = self.input().open('r').read()
+        data = self.curate_data(s3path)
+        if isgeneratorfunction(self.curate_data):
+            for chunk in data:
+                self.insert_data(chunk)
+        else:
+            self.insert_data(data)
         return self.output().touch()
 
     def output(self):
