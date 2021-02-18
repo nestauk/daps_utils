@@ -12,7 +12,7 @@ import re
 import sys
 from datetime import datetime as dt
 from importlib import import_module
-import inspect
+from inspect import isgeneratorfunction
 
 import boto3
 import luigi
