@@ -1,6 +1,8 @@
 ###########################################################
 ### Automatically added by daps-utils metaflowtask-init ###
 ###########################################################
+import os
+
 
 def path_to_init(_file=__file__, cast_to_str=False):
     """Return the path to this file"""
@@ -15,14 +17,14 @@ def path_to_this(this):
 
 
 def load(path):
-    """Load a config file from the given path."""    
+    """Load a config file from the given path."""
     import yaml, json, configparser
     with open(path) as f:
         if path.suffix in ('.yml', '.yaml'):
             return yaml.safe_load(f)
         if path.suffix == '.json':
             return json.load(f)
-        if path.suffix in ('.cnf', '.conf', '.config'):
+        if path.suffix in ('.cnf', '.conf', '.config', '.cfg'):
             config = configparser.ConfigParser()
             config.read(path)
             return config
@@ -47,6 +49,9 @@ def recursive_load(path_to_config):
 
 def load_config():
     """Load all of the config files"""
+    config_name = 'config'
+    if 'GITHUB_ACTIONS' in os.environ:  # CI/CD flag, set by default in GH Actions
+        config_name += '/actions-config'
     path_to_config = path_to_this("config")
     return recursive_load(path_to_config)
 
