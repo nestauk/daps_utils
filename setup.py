@@ -1,6 +1,11 @@
+import os
 from setuptools import setup
 from setuptools import find_namespace_packages
-from daps_utils import __version__, __basedir__
+
+os.environ["IN_SETUP"] = "1"  # noqa: E402
+
+from daps_utils import __version__, __basedir__  # noqa: E402
+
 
 version = ''.join(v for v in __version__ if (v.isnumeric() or v == '.'))
 
