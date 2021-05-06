@@ -1,22 +1,23 @@
 from importlib import import_module
 from contextlib import contextmanager
-from sqlalchemy import create_engine
+from sqlalchemy import create_engine, inspect
 from sqlalchemy.engine.url import URL
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy.exc import OperationalError
-from sqlalchemy import inspect
+from sqlalchemy import exists as sql_exists
+from sqlalchemy.sql.expression import and_
 
 import logging
 import time
 import inspect as _inspect  # to avoid namespace clash with sqlalchemy
 from .parse_caller import get_main_caller_pkg
+
 CALLER_PKG = get_main_caller_pkg(_inspect.currentframe())
 
 
 def object_as_dict(obj):
     """Convert a SqlAlchemy object to a python dict representation"""
-    return {c.key: getattr(obj, c.key)
-            for c in inspect(obj).mapper.column_attrs}
+    return {c.key: getattr(obj, c.key) for c in inspect(obj).mapper.column_attrs}
 
 
 def cast_as_sql_python_type(field, data):
@@ -37,6 +38,23 @@ def cast_as_sql_python_type(field, data):
     return _data
 
 
+def exists(model, **kwargs):
+    """Generate a sqlalchemy.exists statement for a generic ORM
+    based on the primary keys of that ORM.
+
+    Args:
+         orm (:obj:`sqlalchemy.Base`): A sqlalchemy ORM
+         **kwargs (dict): A row of data containing the primary key fields and values.
+    Returns:
+         :code:`sqlalchemy.exists` statement.
+    """
+    statements = [
+        getattr(model, pkey.name) == kwargs[pkey.name]
+        for pkey in model.__table__.primary_key.columns
+    ]
+    return sql_exists().where(and_(*statements))
+
+
 def filter_out_duplicates(data, model, session, low_memory=True):
     """Produce a filtered list of data, exluding duplicates and entries that
     already exist in the data.
@@ -55,8 +73,7 @@ def filter_out_duplicates(data, model, session, low_memory=True):
     # Read all pks if in low_memory mode
     all_pks = set()
     pkey_cols = model.__table__.primary_key.columns
-    is_auto_pkey = all(p.autoincrement and p.type.python_type is int
-                       for p in pkey_cols)
+    is_auto_pkey = all(p.autoincrement and p.type.python_type is int for p in pkey_cols)
     if low_memory and not is_auto_pkey:
         fields = [getattr(model, pkey.name) for pkey in pkey_cols]
         all_pks = set(session.query(*fields).all())
@@ -65,18 +82,25 @@ def filter_out_duplicates(data, model, session, low_memory=True):
     for irow, row in enumerate(data):
         # The data must contain all of the pkeys
         if not is_auto_pkey and not all(pkey.name in row for pkey in pkey_cols):
-            raise ValueError(f"{row} does not contain any of {pkey_cols}"
-                             f"{[pkey.name in row for pkey in pkey_cols]}")
+            raise ValueError(
+                f"{row} does not contain any of {pkey_cols}"
+                f"{[pkey.name in row for pkey in pkey_cols]}"
+            )
         # Generate the pkey for this row
         if not is_auto_pkey:
-            pk = tuple([cast_as_sql_python_type(pkey, row[pkey.name])
-                        for pkey in pkey_cols])
+            pk = tuple(
+                [cast_as_sql_python_type(pkey, row[pkey.name]) for pkey in pkey_cols]
+            )
             # The row mustn't aleady exist in the input data
             if pk in all_pks:
                 continue
             all_pks.add(pk)
         # Nor should the row exist in the DB (low_memory==False, this is slow)
-        if not is_auto_pkey and not low_memory and session.query(exists(model, **row)).scalar():
+        if (
+            not is_auto_pkey
+            and not low_memory
+            and session.query(exists(model, **row)).scalar()
+        ):
             continue
         objs.append(model(**row))
     return objs
@@ -98,20 +122,21 @@ def insert_data(data, model, session, low_memory=True):
     Returns:
         :obj:`list` of :obj:`model` instantiated by data, with dupe pks rm'd.
     """
-    objs = filter_out_duplicates(data=data, model=model,
-                                 session=session, low_memory=low_memory)
+    objs = filter_out_duplicates(
+        data=data, model=model, session=session, low_memory=low_memory
+    )
     session.bulk_save_objects(objs)
     return objs
 
 
 def try_until_allowed(f, *args, **kwargs):
-    '''Keep trying a function if a OperationalError is raised.
+    """Keep trying a function if a OperationalError is raised.
     Specifically meant for handling too many
     connections to a database.
 
     Args:
         f (:obj:`function`): A function to keep trying.
-    '''
+    """
     while True:
         try:
             value = f(*args, **kwargs)
@@ -123,33 +148,34 @@ def try_until_allowed(f, *args, **kwargs):
             return value
 
 
-def get_mysql_engine(database="tests"):
-    '''Generates the MySQL DB engine for tests
+def get_mysql_engine(database="tests", host=None):
+    """Generates the MySQL DB engine for tests
 
     Args:
-        db_env (str): Name of environmental variable
-                      describing the path to the DB config.
-        section (str): Section of the DB config to use.
         database (str): Which database to use
-                        (default is a database called 'production_tests')
-    '''
-    conf = dict(CALLER_PKG.config['mysqldb']._sections['mysqldb'])
-    url = URL(drivername='mysql+pymysql',
-              username=conf['user'],
-              password=conf.get('password'),
-              host=conf.get('host'),
-              port=conf.get('port'),
-              database=database)
+        host (str): Hostname, which will fallback on the config by default
+    Returns:
+        engine (:obj:`sqlalchemy.engine.base.Engine`): engine to access the database
+    """
+    conf = dict(CALLER_PKG.config["mysqldb"]._sections["mysqldb"])
+    url = URL(
+        drivername="mysql+pymysql",
+        username=conf["user"],
+        password=conf.get("password"),
+        host=host if host is not None else conf.get("host"),
+        port=conf.get("port"),
+        database=database,
+    )
     return create_engine(url, connect_args={"charset": "utf8mb4"})
 
 
 @contextmanager
-def db_session(database="tests"):
+def db_session(database="tests", host=None):
     """Creates and mangages an sqlalchemy session.
 
     Args:
-        engine (:obj:`sqlalchemy.engine.base.Engine`): engine to use to access the database
-
+        engine (:obj:`sqlalchemy.engine.base.Engine`): engine to access the database
+        host (str): Hostname, which will fallback on the config by default
     Returns:
         (:obj:`sqlalchemy.orm.session.Session`): generated session
     """
@@ -168,6 +194,24 @@ def db_session(database="tests"):
 
 def get_orm_base(orm_name):
     """Get the Base class by ORM name"""
-    base = '.'.join((CALLER_PKG.__name__, 'orms', orm_name))
+    base = ".".join((CALLER_PKG.__name__, "orms", orm_name))
     pkg = import_module(str(base))
     return pkg.Base
+
+
+def windowed_query(model, session, windowsize=10000):
+    """"Break a Query into chunks on a given column."""
+
+    columns = model.__table__.columns
+    pk0 = list(model.__table__.primary_key.columns)[0]  # The first primary key
+    q = session.query(columns).order_by(pk0)
+    last_id = None
+    while True:
+        subq = q
+        if last_id is not None:
+            subq = subq.filter(pk0 > last_id)
+        chunk = subq.limit(windowsize).all()
+        if not chunk:
+            break
+        last_id = chunk[-1][-1]
+        yield [{col.name: value for col, value in zip(columns, row)} for row in chunk]
