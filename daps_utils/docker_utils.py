@@ -150,7 +150,9 @@ def build_flow_image(pkg, flow_path, rebuild_base,
                                    f'"{base_tag}".')
     # Now build the base image
     build_image(pkg=pkg, tag=base_tag, dockerfile=base_dockerfile,
-                rebuild=rebuild_base)
+                rebuild=rebuild_base,
+                rm=True #  Remove intermediate containers
+                ) 
 
     # Build the flow image
     flow_tag=f'daps_{tag}'
@@ -171,7 +173,9 @@ def build_flow_image(pkg, flow_path, rebuild_base,
                 rebuild=rebuild,
                 dockerfile=dockerfile,
                 nocache=True,
-                buildargs=build_args)
+                buildargs=build_args,
+                rm=True # Remove intermediate containers
+                )
     return flow_tag
 
 
@@ -197,12 +201,14 @@ def _run(container):
 def run_image(img, **kwargs):
     """Set up AWS credentials for the docker image, then run in
     a new container."""
-    dkr = docker.from_env()
-    aws_dir = os.path.expanduser(os.path.join('~', '.aws'))
-    volumes = {aws_dir: {'bind': '/root/.aws', 'mode': 'rw'}}
+    dkr = docker.DockerClient(base_url='unix://var/run/docker.sock')
     logging.info(f"Running container on image '{img}'")
-    container = dkr.containers.create(img, tty=True, auto_remove=False,
-                                      volumes=volumes, **kwargs)
+    container = dkr.containers.create(img, 
+                                        tty=True, 
+                        # Enable auto-removal of the container on 
+                        # daemon side when the container’s process exits
+                                        auto_remove=True,
+                                        **kwargs)
     logs = _run(container)
     return logs
 
