@@ -1,1 +1,1 @@
-git+git://github.com/nestauk/nuts_finder@master
+nuts-finder==21.5.5.14
