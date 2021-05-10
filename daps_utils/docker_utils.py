@@ -189,7 +189,12 @@ def _run(container):
     exit_status = container.wait()['StatusCode']
     logs = decode_logs(output)
     logging.debug(logs)
-    container.remove(force=True)
+    # Remove if not otherwise specified
+    try:
+        container.remove(force=True)
+    except (docker.errors.NotFound, docker.errors.APIError):
+        pass
+    # Raise if the internal process failed
     if exit_status != 0:
         msg = (f"Container failed with exit status {exit_status}.\n",
                "The following trace came from your failed container:", logs)
