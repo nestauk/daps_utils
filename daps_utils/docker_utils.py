@@ -8,6 +8,7 @@ to run metaflow Flows.
 See :obj:`build_and_run_image` for the main usage.
 """
 
+import boto3
 from metaflow.metaflow_config import METAFLOW_CONFIG
 from pathlib import Path
 from getpass import getuser
