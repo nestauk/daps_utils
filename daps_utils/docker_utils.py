@@ -8,6 +8,7 @@ to run metaflow Flows.
 See :obj:`build_and_run_image` for the main usage.
 """
 
+import boto3
 from metaflow.metaflow_config import METAFLOW_CONFIG
 from pathlib import Path
 from getpass import getuser
@@ -152,7 +153,11 @@ def build_flow_image(pkg, flow_path, rebuild_base,
     build_image(pkg=pkg, tag=base_tag, dockerfile=base_dockerfile,
                 rebuild=rebuild_base,
                 rm=True #  Remove intermediate containers
-                ) 
+                )
+
+    # Retrieve AWS credentials
+    session = boto3.Session()
+    credentials = session.get_credentials().get_frozen_credentials()
 
     # Build the flow image
     flow_tag=f'daps_{tag}'
@@ -161,12 +166,15 @@ def build_flow_image(pkg, flow_path, rebuild_base,
                   'METAFLOW_RUN_PARAMETERS': ' '.join(f'--{k} {v}' for k, v in
                                                       flow_kwargs.items()),
                   'METAFLOW_PRERUN_PARAMETERS': ' '.join(f'--{k} {v}' for k, v in
-                                                         preflow_kwargs.items()),                  
+                                                         preflow_kwargs.items()),
                   'LAUNCHSH': fullpath_to_relative(pkg, launchsh),
                   'REPONAME': pkg.__name__,
                   'USER': getuser(),
                   'FLOWDIR': flow_dir,
-                  'FLOW': flow_name}
+                  'FLOW': flow_name,
+                  'AWS_DEFAULT_REGION': session.region_name,
+                  'AWS_ACCESS_KEY_ID': credentials.access_key,
+                  'AWS_SECRET_ACCESS_KEY': credentials.secret_key}
     rebuild = rebuild_flow or rebuild_base
     build_image(pkg=pkg,
                 tag=flow_tag,

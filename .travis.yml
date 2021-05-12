@@ -13,6 +13,10 @@ install:
   - python -c "import sys; print(sys.path)"
 before_script:
   - sudo rm -f /etc/boto.cfg
+env:
+  - AWS_ACCESS_KEY_ID='dummy'
+    AWS_SECRET_ACCESS_KEY='dummy'
+    AWS_DEFAULT_REGION='dummy'
 branches:
   only:
     - dev
