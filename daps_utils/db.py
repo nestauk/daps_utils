@@ -3,7 +3,7 @@ from contextlib import contextmanager
 from sqlalchemy import create_engine
 from sqlalchemy.engine.url import URL
 from sqlalchemy.orm import sessionmaker
-from sqlalchemy.exc import OperationalError
+from sqlalchemy.exc import OperationalError, NoInspectionAvailable
 from sqlalchemy import inspect
 
 import logging
@@ -14,9 +14,19 @@ CALLER_PKG = get_main_caller_pkg(_inspect.currentframe())
 
 
 def object_as_dict(obj):
-    """Convert a SqlAlchemy object to a python dict representation"""
-    return {c.key: getattr(obj, c.key)
-            for c in inspect(obj).mapper.column_attrs}
+    """Convert a SqlAlchemy object to a python dict representation. Supports Base query
+    results and query results from ORM-instrumented descriptors."""
+    try:
+        # if you query with full ORM Base you get all columns and can retrieve key,values
+        # like so
+        return {c.key: getattr(obj, c.key)
+                for c in inspect(obj).mapper.column_attrs}
+    except NoInspectionAvailable:
+        # but some of the query return instances aren't inspectable, e.g. the
+        # sqlalchemy.util._collections.result that obtains if you query with
+        # ORM-instrumented descriptors (e.g., session.query(orm.column1, orm.column2).
+        # https://docs.sqlalchemy.org/en/14/orm/tutorial.html#querying
+        return obj._asdict()
 
 
 def cast_as_sql_python_type(field, data):
