@@ -24,6 +24,7 @@ function AddCalVerHook(){
     mkdir -p .githooks
     # Don't append text if it already exists
     _AssertFirstInit ".githooks/pre-commit"
+    echo '#!/usr/bin/env bash' >> .githooks/pre-commit
     _AddHeader ".githooks/pre-commit"
     echo 'set -e' >> .githooks/pre-commit    
     echo 'function incrementVersion {' >> .githooks/pre-commit
