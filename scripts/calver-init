@@ -14,6 +14,15 @@ function _AssertFirstInit(){
     fi
 }
 
+function _EnsureShebang(){
+    if [ $(head -c 2 "$1") = "#!" ]; then
+        echo 'shebang already present'
+    else
+        echo 'prepending shebang'
+        sed -i '1 i #!/bin/bash' "$1"
+    fi
+}
+
 function _AddHeader(){
     echo '################################################################' >> "$1"
     echo "${DU_MSG}" >> "$1"
@@ -24,7 +33,7 @@ function AddCalVerHook(){
     mkdir -p .githooks
     # Don't append text if it already exists
     _AssertFirstInit ".githooks/pre-commit"
-    echo '#!/usr/bin/env bash' >> .githooks/pre-commit
+    _EnsureShebang ".githooks/pre-commit"
     _AddHeader ".githooks/pre-commit"
     echo 'set -e' >> .githooks/pre-commit    
     echo 'function incrementVersion {' >> .githooks/pre-commit
@@ -56,13 +65,14 @@ function AddVersionMergeDriver(){
 
 function AddInstallFile(){
     _AssertFirstInit "install.sh"
-    echo '#!/usr/bin/env bash' >> install.sh
+    _EnsureShebang "install.sh"
     _AddHeader "install.sh"
     echo 'set -e' >> install.sh        
     echo 'chmod +x .githooks/pre-commit' >> install.sh
     echo 'bash .githooks/pre-commit' >> install.sh
-    echo 'ln -s $PWD/.githooks/pre-commit .git/hooks/pre-commit' >> install.sh
+    echo 'ln -sf $PWD/.githooks/pre-commit .git/hooks/pre-commit' >> install.sh
     echo 'git config --local include.path ../.gitconfig' >> install.sh
+    echo 'echo install.sh completed successfully' >> install.sh
     echo '################################################################' >> install.sh
     echo "running install.sh script"
     bash install.sh
