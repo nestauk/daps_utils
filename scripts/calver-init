@@ -5,6 +5,10 @@
 set -e
 DU_MSG="### Text automatically added by daps-utils calver-init ###"
 
+function _Prepend(){
+    printf '%s\n%s' "$1" "$(cat $2)" >| $2
+}
+
 function _AssertFirstInit(){
     touch "$1"
     if grep -Fxq "${DU_MSG}" "$1" &> /dev/null
@@ -19,7 +23,7 @@ function _EnsureShebang(){
         echo 'shebang already present'
     else
         echo 'prepending shebang'
-        sed -i '1 i #!/bin/bash' "$1"
+        _Prepend '#!/bin/bash' "$1"
     fi
 }
 
