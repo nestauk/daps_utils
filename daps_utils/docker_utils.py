@@ -47,7 +47,7 @@ def get_metaflow_config():
     """Workaround for Travis"""
     k = "METAFLOW_DATASTORE_SYSROOT_S3"
     if k not in METAFLOW_CONFIG:
-        METAFLOW_CONFIG[k] = "s3://dummy-bucket/dummy-key"
+        METAFLOW_CONFIG[k] = ""
     return METAFLOW_CONFIG
 
 
@@ -65,7 +65,9 @@ def get_s3_bucket_key(timestamp):
     """
     metaflow_config = get_metaflow_config()
     s3_path = metaflow_config["METAFLOW_DATASTORE_SYSROOT_S3"]
-    bucket, path = S3_REGEX.findall(s3_path)[0]
+    bucket, path = None, None  # default, e.g. for tests
+    if s3_path:
+        bucket, path = S3_REGEX.findall(s3_path)[0]
     timestamp = int(timestamp)  # Convert from float
     key = f"{path}/failure-logs/{timestamp}/logs.txt"
     return bucket, key
@@ -110,7 +112,8 @@ def decode_logs(output, max_lines=100):
     truncated_logs = format_logs(truncated_logs)
     # Write full logs to S3
     bucket, key = get_s3_bucket_key(timestamp)
-    s3.Object(bucket, key).put(Body=full_logs)
+    if (bucket, key) != (None, None):
+        s3.Object(bucket, key).put(Body=full_logs)
     # Return truncated logs for I/O
     return "\n" + truncated_logs.decode()
 
