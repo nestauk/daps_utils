@@ -9,6 +9,7 @@ from daps_utils.docker_utils import fullpath_to_relative
 from daps_utils.docker_utils import get_s3_bucket_key
 from daps_utils.docker_utils import truncate_logs
 from daps_utils.docker_utils import format_logs
+from daps_utils.docker_utils import remove_ansi
 
 CONFIG = config["metaflowtask"]
 PATH = "daps_utils.docker_utils.{}"
@@ -52,6 +53,11 @@ def test_decode_logs(mocked_trunc, mocked_boto3):
 
 def test_fullpath_to_relative():
     assert fullpath_to_relative(daps_utils, __basedir__) == f"{REPONAME}/"
+
+
+def test_remove_ansi():
+    test_text = b"\x1b[00m\x1b[01;31mexamplefile.zip\x1b[00m\x1b[01;31m"
+    assert remove_ansi(test_text) == b"examplefile.zip"
 
 
 def integration_decode_logs():

@@ -21,6 +21,10 @@ import re
 
 S3_REGEX = re.compile(r"s3://(.*)/(.*)")
 
+ANSI_REGEX = re.compile(
+    br"(?:\x1B[@-Z\\-_]|[\x80-\x9A\x9C-\x9F]|(?:\x1B\[|\x9B)[0-?]*[ -/]*[@-~])"
+)
+
 
 class DockerNamespaceError(Exception):
     """Exception when a local Dockerfile-base is given which has tag
@@ -84,9 +88,17 @@ def format_logs(logs):
     return logs
 
 
+def remove_ansi(bytestring):
+    """
+    Strips ANSI text formatting from a bytestring
+    taken from https://stackoverflow.com/a/14693789/1571593
+    """
+    return ANSI_REGEX.sub(b"", bytestring)
+
+
 def decode_logs(output, max_lines=100):
     """Decode docker log files and append '>>>' to the start of each line."""
-    full_logs = list(output)
+    full_logs = list(map(remove_ansi, output))  # strip text formatting
     timestamp = datetime.now().timestamp()  # in case need to truncate logs
     # Truncate the logs if too long
     s3 = boto3.resource("s3")
