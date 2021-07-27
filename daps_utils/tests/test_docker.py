@@ -24,7 +24,7 @@ def test_get_s3_bucket_key(mocked_mf_conf):
     mocked_mf_conf.return_value = {"METAFLOW_DATASTORE_SYSROOT_S3": "s3://foo/bar"}
     bucket, key = get_s3_bucket_key("123")
     assert bucket == "foo"
-    assert key == "bar/failure-logs/123/logs.txt"
+    assert key == "bar/metaflow-logs/123/logs.txt"
 
 
 @mock.patch(PATH.format("get_s3_bucket_key"))

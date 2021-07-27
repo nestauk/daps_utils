@@ -69,7 +69,7 @@ def get_s3_bucket_key(timestamp):
     if s3_path:
         bucket, path = S3_REGEX.findall(s3_path)[0]
     timestamp = int(timestamp)  # Convert from float
-    key = f"{path}/failure-logs/{timestamp}/logs.txt"
+    key = f"{path}/metaflow-logs/{timestamp}/logs.txt"
     return bucket, key
 
 
@@ -85,9 +85,11 @@ def truncate_logs(logs, max_lines, timestamp):
 
 def format_logs(logs):
     """Join and format the logs"""
-    logs = b"".join(logs)
-    logs = b"\n".join(b">>> %a" % line.decode() for line in logs.split(b"\n"))
-    return logs
+    logs = b"".join(logs).split(b"\n")  # Join charstream, then split lines
+    logs = map(remove_ansi, logs)  # Remove ansi
+    logs = map(lambda line: line.strip(b"\r"), logs)  # Remove trailing '\r'
+    logs = map(lambda line: b">>> %a" % line.decode(), logs)  # Prepend '>>> '
+    return b"\n".join(logs)
 
 
 def remove_ansi(bytestring):
@@ -100,7 +102,7 @@ def remove_ansi(bytestring):
 
 def decode_logs(output, max_lines=100):
     """Decode docker log files and append '>>>' to the start of each line."""
-    full_logs = list(map(remove_ansi, output))  # strip text formatting
+    full_logs = list(output)  # strip text formatting
     timestamp = datetime.now().timestamp()  # in case need to truncate logs
     # Truncate the logs if too long
     s3 = boto3.resource("s3")
