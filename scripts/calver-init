@@ -1,19 +1,44 @@
 #!/usr/bin/env bash
+# Initialise calendar versioning scheme (pre-commit hook, merge driver, install.sh script)
+# Run on a repo that has at least one commit.
 
 set -e
+DU_MSG="### Text automatically added by daps-utils calver-init ###"
 
-function AddCalVerHook(){
-    mkdir .githooks &> /dev/null || echo ".githooks already exists"
-    touch .githooks/pre-commit
-    # Don't append text if it already exists
-    DU_MSG="### Text automatically added by daps-utils calver-init ###"
-    if grep -Fxq "${DU_MSG}" .githooks/pre-commit &> /dev/null
+function _Prepend(){
+    printf '%s\n%s' "$1" "$(cat $2)" >| $2
+}
+
+function _AssertFirstInit(){
+    touch "$1"
+    if grep -Fxq "${DU_MSG}" "$1" &> /dev/null
     then
-	echo -e "ERROR: 'calver-init' has already been called. Manually remove previous edit by 'calver-init' from '.githooks/pre-commit' (i.e. the text between the long comment blocks), and then try again.\n" >&2
+	echo -e "ERROR: 'calver-init' has already been called. Manually remove previous edit by 'calver-init' from ""$1"" (i.e. the text between the long comment blocks), and then try again.\n" >&2
 	exit 1
     fi
-    echo '################################################################' >> .githooks/pre-commit
-    echo ${DU_MSG} >> .githooks/pre-commit
+}
+
+function _EnsureShebang(){
+    if [ $(head -c 2 "$1") = "#!" ]; then
+        echo 'shebang already present'
+    else
+        echo 'prepending shebang'
+        _Prepend '#!/bin/bash' "$1"
+    fi
+}
+
+function _AddHeader(){
+    echo '################################################################' >> "$1"
+    echo "${DU_MSG}" >> "$1"
+    echo "$1" has been created or updated.
+}
+
+function AddCalVerHook(){
+    mkdir -p .githooks
+    # Don't append text if it already exists
+    _AssertFirstInit ".githooks/pre-commit"
+    _EnsureShebang ".githooks/pre-commit"
+    _AddHeader ".githooks/pre-commit"
     echo 'set -e' >> .githooks/pre-commit    
     echo 'function incrementVersion {' >> .githooks/pre-commit
     echo '    CALVER=$(date +"%y.%m.%d")' >> .githooks/pre-commit
@@ -24,28 +49,36 @@ function AddCalVerHook(){
     echo '}' >> .githooks/pre-commit
     echo 'incrementVersion' >> .githooks/pre-commit
     echo '################################################################' >> .githooks/pre-commit
-    echo ".githooks/pre-commit has been created or updated."
 }
 
+function AddVersionMergeDriver(){
+    # reference driver in .gitattributes
+    _AssertFirstInit ".gitattributes"
+    _AddHeader ".gitattributes"
+    echo "${PWD##*/}"/VERSION merge=always-ours >> .gitattributes
+    echo '################################################################' >> .gitattributes
+    # define driver in .gitconfig
+    _AssertFirstInit ".gitconfig"
+    _AddHeader ".gitconfig"
+    echo '[merge "always-ours"]' >> .gitconfig
+    echo '    name = Merge Ours' >> .gitconfig
+    # embarrassingly simple - always return true means always pick ours
+    echo '    driver = true' >> .gitconfig
+    echo '################################################################' >> .gitconfig
+}
 
 function AddInstallFile(){
-    touch install.sh
-    # Don't append text if it already exists
-    DU_MSG="### Text automatically added by daps-utils calver-init ###"
-    if grep -Fxq "${DU_MSG}" install.sh &> /dev/null
-    then
-	echo -e "\ERROR: 'calver-init' has already been called. Remove 'install.sh' before retrying."
-	exit 1
-    fi
-    echo '#!/usr/bin/env bash' >> install.sh
+    _AssertFirstInit "install.sh"
+    _EnsureShebang "install.sh"
+    _AddHeader "install.sh"
     echo 'set -e' >> install.sh        
-    echo '################################################################' >> install.sh
-    echo ${DU_MSG} >> install.sh
     echo 'chmod +x .githooks/pre-commit' >> install.sh
     echo 'bash .githooks/pre-commit' >> install.sh
-    echo 'ln -s $PWD/.githooks/pre-commit .git/hooks/pre-commit' >> install.sh
+    echo 'ln -sf $PWD/.githooks/pre-commit .git/hooks/pre-commit' >> install.sh
+    echo 'git config --local include.path ../.gitconfig' >> install.sh
+    echo 'echo install.sh completed successfully' >> install.sh
     echo '################################################################' >> install.sh
-    echo "install.sh has been created or updated."
+    echo "running install.sh script"
     bash install.sh
     echo ".githooks/pre-commit is now active. Anyone cloning this repository will have to call 'bash install.sh' from the project root in order to activate Calendar Versioning."    
 }
@@ -59,10 +92,17 @@ if ! [ -d ".git" ]; then
     echo "This is not a git repository. Run 'git init' first, and then commit something." >&2
     exit 1
 fi
-if ! [ -d "${PWD##*/}" ]; then
-    mkdir ${PWD##*/}
+
+if [ -z "$(git rev-list -n 1 --all)" ]; then
+    echo "This git repository has no commits. Make at least one commit before running this script." >&2
+    exit 1
 fi
 
+# create subdir by the same name (e.g., ojd_daps/ojd_daps)
+# (this is where VERSION will live)
+mkdir -p "${PWD##*/}"
+
 AddCalVerHook
+AddVersionMergeDriver
 AddInstallFile
 echo "You can now inspect your Calendar Version from ${PWD##*/}/VERSION"

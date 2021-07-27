@@ -10,14 +10,6 @@ function branchStartsWithNumber {
     fi
 }
 
-function incrementVersion {
-    CALVER=$(date +"%y.%m.%d")
-    CURRENT_BRANCH=$(git rev-parse --abbrev-ref HEAD)
-    PROJECT_ROOT=${PWD##*/}
-    echo -n $CALVER.$CURRENT_BRANCH > ${PROJECT_ROOT}/VERSION
-    git add ${PROJECT_ROOT}/VERSION
-}
-
 function mustBeInstalled {
     if ! [ -x "$(command -v $1)" ]; then
 	echo 'Error: $1 must be installed.' >&2
@@ -37,4 +29,15 @@ function forbidCommitTo {
 forbidCommitTo "dev"
 forbidCommitTo "master"
 branchStartsWithNumber
+################################################################
+### Text automatically added by daps-utils calver-init ###
+set -e
+function incrementVersion {
+    CALVER=$(date +"%y.%m.%d")
+    CURRENT_BRANCH=$(git rev-parse --abbrev-ref HEAD)
+    PROJECT_ROOT=${PWD##*/}
+    echo -n $CALVER.$CURRENT_BRANCH > ${PROJECT_ROOT}/VERSION
+    git add ${PROJECT_ROOT}/VERSION
+}
 incrementVersion
+################################################################
