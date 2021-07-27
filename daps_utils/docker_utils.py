@@ -43,7 +43,7 @@ def get_metaflow_config():
     """Workaround for Travis"""
     k = "METAFLOW_DATASTORE_SYSROOT_S3"
     if k not in METAFLOW_CONFIG:
-        METAFLOW_CONFIG[k] = ""
+        METAFLOW_CONFIG[k] = "s3://dummy-bucket/dummy-key"
     return METAFLOW_CONFIG
 
 
