@@ -114,7 +114,7 @@ def decode_logs(output, max_lines=100):
     truncated_logs = format_logs(truncated_logs)
     # Write full logs to S3
     bucket, key = get_s3_bucket_key(timestamp)
-    if (bucket, key) != (None, None):
+    if bucket is not None:
         s3.Object(bucket, key).put(Body=full_logs)
     # Return truncated logs for I/O
     return "\n" + truncated_logs.decode()
