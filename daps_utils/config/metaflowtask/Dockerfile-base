@@ -1,5 +1,5 @@
-FROM amazonlinux:2
-
+# NB force x86_64 arch (so emulate on M1 macs)
+FROM amd64/amazonlinux:2
 # For debugging (leaving this here since we're still near the docker diskspace thresholds)
 RUN du -cxh --threshold=5M --max-depth=3 /
 

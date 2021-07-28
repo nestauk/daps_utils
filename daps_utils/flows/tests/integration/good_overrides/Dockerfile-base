@@ -1,4 +1,4 @@
-FROM amazonlinux:2
+FROM amd64/amazonlinux:2
 
 # For debugging (leaving this here since we're still near the docker diskspace thresholds)
 RUN du -cxh --threshold=5M --max-depth=3 /
