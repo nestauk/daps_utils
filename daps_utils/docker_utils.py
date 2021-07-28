@@ -85,7 +85,6 @@ def truncate_logs(logs, max_lines, timestamp):
 
 def format_logs(logs):
     """Join and format the logs"""
-    logs = b"".join(logs).split(b"\n")  # Join charstream, then split lines
     logs = map(remove_ansi, logs)  # Remove ansi
     logs = map(lambda line: line.strip(b"\r"), logs)  # Remove trailing '\r'
     logs = map(lambda line: b">>> %a" % line.decode(), logs)  # Prepend '>>> '
@@ -102,7 +101,7 @@ def remove_ansi(bytestring):
 
 def decode_logs(output, max_lines=100):
     """Decode docker log files and append '>>>' to the start of each line."""
-    full_logs = list(output)  # strip text formatting
+    full_logs = b"".join(output).split(b"\n")  # Join charstream, then split lines
     timestamp = datetime.now().timestamp()  # in case need to truncate logs
     # Truncate the logs if too long
     s3 = boto3.resource("s3")
