@@ -22,7 +22,7 @@ import re
 S3_REGEX = re.compile(r"s3://(.*)/(.*)")
 
 ANSI_REGEX = re.compile(
-    br"(?:\x1B[@-Z\\-_]|[\x80-\x9A\x9C-\x9F]|(?:\x1B\[|\x9B)[0-?]*[ -/]*[@-~])"
+    r"(?:\x1B[@-Z\\-_]|[\x80-\x9A\x9C-\x9F]|(?:\x1B\[|\x9B)[0-?]*[ -/]*[@-~])"
 )
 
 
@@ -87,7 +87,8 @@ def format_logs(logs):
     """Join and format the logs"""
     logs = map(remove_ansi, logs)  # Remove ansi
     logs = map(lambda line: line.strip(b"\r"), logs)  # Remove trailing '\r'
-    logs = map(lambda line: b">>> %a" % line.decode(), logs)  # Prepend '>>> '
+    logs = map(lambda line: f">>> '{line.decode()}'", logs)  # decode and prepend '>>> '
+    logs = map(str.encode, logs)  # Re-encode
     return b"\n".join(logs)
 
 
@@ -96,7 +97,8 @@ def remove_ansi(bytestring):
     Strips ANSI text formatting from a bytestring
     taken from https://stackoverflow.com/a/14693789/1571593
     """
-    return ANSI_REGEX.sub(b"", bytestring)
+    text = bytestring.decode()
+    return ANSI_REGEX.sub("", text).encode()
 
 
 def decode_logs(output, max_lines=100):
