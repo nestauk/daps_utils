@@ -51,6 +51,20 @@ def test_decode_logs(mocked_trunc, mocked_boto3):
     assert decode_logs(msg) == expected
 
 
+def test_decode_logs_hard():
+    logs = map(
+        str.encode,
+        [
+            "\x1b[00m\x1b[01;31msome logs",
+            "foo \x1b[00m\x1b[01;31m█████████▊ bar",
+            "123",
+            "😊😊😊",
+        ],
+    )
+    formatted = format_logs(logs).decode()
+    formatted == ">>> 'some logs'\n>>> 'foo █████████▊ bar'\n>>> '123'\n>>> '😊😊😊'"
+
+
 def test_fullpath_to_relative():
     assert fullpath_to_relative(daps_utils, __basedir__) == f"{REPONAME}/"
 
