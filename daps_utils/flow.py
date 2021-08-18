@@ -92,9 +92,6 @@ class DapsFlowMixin:
         # Read in the config
         config = ConfigParser()
         config.read_string(data)
-        # Mock assign the config to a dummy caller package in the
-        # daps_utils.db namespace
-        db.CALLER_PKG = SimpleNamespace()
-        setattr(
-            db.CALLER_PKG, "config", {"mysqldb": config}
-        )  # Formatted as per __initplus__
+        # Mock assign the config (formatted as per __initplus__)
+        # to a dummy caller package in the daps_utils.db namespace
+        db.CALLER_PKG = SimpleNamespace(config={"mysqldb": config})
