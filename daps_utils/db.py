@@ -134,7 +134,7 @@ def try_until_allowed(f, *args, **kwargs):
 
 
 def get_mysql_engine(database="tests"):
-    '''Generates the MySQL DB engine for tests
+    '''Generates the MySQL DB engine with pool_pre_ping set.
 
     Args:
         db_env (str): Name of environmental variable
@@ -150,7 +150,7 @@ def get_mysql_engine(database="tests"):
               host=conf.get('host'),
               port=conf.get('port'),
               database=database)
-    return create_engine(url, connect_args={"charset": "utf8mb4"})
+    return create_engine(url, connect_args={"charset": "utf8mb4"}, pool_pre_ping=True)
 
 
 @contextmanager
