@@ -137,11 +137,8 @@ def get_mysql_engine(database="tests"):
     '''Generates the MySQL DB engine with pool_pre_ping set.
 
     Args:
-        db_env (str): Name of environmental variable
-                      describing the path to the DB config.
-        section (str): Section of the DB config to use.
         database (str): Which database to use
-                        (default is a database called 'production_tests')
+                        (default is a database called 'tests')
     '''
     conf = dict(CALLER_PKG.config['mysqldb']._sections['mysqldb'])
     url = URL(drivername='mysql+pymysql',
