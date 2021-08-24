@@ -134,14 +134,11 @@ def try_until_allowed(f, *args, **kwargs):
 
 
 def get_mysql_engine(database="tests"):
-    '''Generates the MySQL DB engine for tests
+    '''Generates the MySQL DB engine with pool_pre_ping set.
 
     Args:
-        db_env (str): Name of environmental variable
-                      describing the path to the DB config.
-        section (str): Section of the DB config to use.
         database (str): Which database to use
-                        (default is a database called 'production_tests')
+                        (default is a database called 'tests')
     '''
     conf = dict(CALLER_PKG.config['mysqldb']._sections['mysqldb'])
     url = URL(drivername='mysql+pymysql',
@@ -150,7 +147,7 @@ def get_mysql_engine(database="tests"):
               host=conf.get('host'),
               port=conf.get('port'),
               database=database)
-    return create_engine(url, connect_args={"charset": "utf8mb4"})
+    return create_engine(url, connect_args={"charset": "utf8mb4"}, pool_pre_ping=True)
 
 
 @contextmanager
