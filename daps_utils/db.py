@@ -10,6 +10,7 @@ import logging
 import time
 import inspect as _inspect  # to avoid namespace clash with sqlalchemy
 from .parse_caller import get_main_caller_pkg
+
 CALLER_PKG = get_main_caller_pkg(_inspect.currentframe())
 
 
@@ -19,8 +20,7 @@ def object_as_dict(obj):
     try:
         # if you query with full ORM Base you get all columns and can retrieve key,values
         # like so
-        return {c.key: getattr(obj, c.key)
-                for c in inspect(obj).mapper.column_attrs}
+        return {c.key: getattr(obj, c.key) for c in inspect(obj).mapper.column_attrs}
     except NoInspectionAvailable:
         # but some of the query return instances aren't inspectable, e.g. the
         # sqlalchemy.util._collections.result that obtains if you query with
@@ -65,8 +65,7 @@ def filter_out_duplicates(data, model, session, low_memory=True):
     # Read all pks if in low_memory mode
     all_pks = set()
     pkey_cols = model.__table__.primary_key.columns
-    is_auto_pkey = all(p.autoincrement and p.type.python_type is int
-                       for p in pkey_cols)
+    is_auto_pkey = all(p.autoincrement and p.type.python_type is int for p in pkey_cols)
     if low_memory and not is_auto_pkey:
         fields = [getattr(model, pkey.name) for pkey in pkey_cols]
         all_pks = set(session.query(*fields).all())
@@ -75,18 +74,25 @@ def filter_out_duplicates(data, model, session, low_memory=True):
     for irow, row in enumerate(data):
         # The data must contain all of the pkeys
         if not is_auto_pkey and not all(pkey.name in row for pkey in pkey_cols):
-            raise ValueError(f"{row} does not contain any of {pkey_cols}"
-                             f"{[pkey.name in row for pkey in pkey_cols]}")
+            raise ValueError(
+                f"{row} does not contain any of {pkey_cols}"
+                f"{[pkey.name in row for pkey in pkey_cols]}"
+            )
         # Generate the pkey for this row
         if not is_auto_pkey:
-            pk = tuple([cast_as_sql_python_type(pkey, row[pkey.name])
-                        for pkey in pkey_cols])
+            pk = tuple(
+                [cast_as_sql_python_type(pkey, row[pkey.name]) for pkey in pkey_cols]
+            )
             # The row mustn't aleady exist in the input data
             if pk in all_pks:
                 continue
             all_pks.add(pk)
         # Nor should the row exist in the DB (low_memory==False, this is slow)
-        if not is_auto_pkey and not low_memory and session.query(exists(model, **row)).scalar():
+        if (
+            not is_auto_pkey
+            and not low_memory
+            and session.query(exists(model, **row)).scalar()
+        ):
             continue
         objs.append(model(**row))
     return objs
@@ -108,20 +114,21 @@ def insert_data(data, model, session, low_memory=True):
     Returns:
         :obj:`list` of :obj:`model` instantiated by data, with dupe pks rm'd.
     """
-    objs = filter_out_duplicates(data=data, model=model,
-                                 session=session, low_memory=low_memory)
+    objs = filter_out_duplicates(
+        data=data, model=model, session=session, low_memory=low_memory
+    )
     session.bulk_save_objects(objs)
     return objs
 
 
 def try_until_allowed(f, *args, **kwargs):
-    '''Keep trying a function if a OperationalError is raised.
+    """Keep trying a function if a OperationalError is raised.
     Specifically meant for handling too many
     connections to a database.
 
     Args:
         f (:obj:`function`): A function to keep trying.
-    '''
+    """
     while True:
         try:
             value = f(*args, **kwargs)
@@ -134,19 +141,21 @@ def try_until_allowed(f, *args, **kwargs):
 
 
 def get_mysql_engine(database="tests"):
-    '''Generates the MySQL DB engine with pool_pre_ping set.
+    """Generates the MySQL DB engine with pool_pre_ping set.
 
     Args:
         database (str): Which database to use
                         (default is a database called 'tests')
-    '''
-    conf = dict(CALLER_PKG.config['mysqldb']._sections['mysqldb'])
-    url = URL(drivername='mysql+pymysql',
-              username=conf['user'],
-              password=conf.get('password'),
-              host=conf.get('host'),
-              port=conf.get('port'),
-              database=database)
+    """
+    conf = dict(CALLER_PKG.config["mysqldb"]._sections["mysqldb"])
+    url = URL(
+        drivername="mysql+pymysql",
+        username=conf["user"],
+        password=conf.get("password"),
+        host=conf.get("host"),
+        port=conf.get("port"),
+        database=database,
+    )
     return create_engine(url, connect_args={"charset": "utf8mb4"}, pool_pre_ping=True)
 
 
@@ -175,6 +184,6 @@ def db_session(database="tests"):
 
 def get_orm_base(orm_name):
     """Get the Base class by ORM name"""
-    base = '.'.join((CALLER_PKG.__name__, 'orms', orm_name))
+    base = ".".join((CALLER_PKG.__name__, "orms", orm_name))
     pkg = import_module(str(base))
     return pkg.Base
