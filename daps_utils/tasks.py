@@ -10,10 +10,10 @@ import inspect
 import json
 import re
 import sys
-from datetime import datetime as dt
 from importlib import import_module
 from inspect import isgeneratorfunction
 
+from tenacity import retry, stop_after_attempt, wait_fixed, wait_random
 import boto3
 import luigi
 from luigi.contrib.mysqldb import MySqlTarget
@@ -42,6 +42,12 @@ def assert_hasattr(pkg, attr, pkg_name):
             f"{pkg_name} is expected to have attribute '{attr}'. "
             "Have you run 'metaflowtask-init' from your package root?"
         )
+
+
+@retry(stop=stop_after_attempt(10), wait=wait_fixed(3) + wait_random(0, 2))
+def read_body(obj):
+    buffer = obj.get()["Body"].read().decode("utf-8")
+    return buffer
 
 
 def toggle_force_to_false(func):
@@ -283,7 +289,7 @@ class CurateTask(ForceableTask, DapsTaskMixin):
         bucket = s3.Bucket(bucket_name)
         _prefix = f"{prefix}/{file_prefix}"
         for obj in bucket.objects.filter(Prefix=_prefix):
-            buffer = obj.get()["Body"].read().decode("utf-8")
+            buffer = read_body(obj)
             yield json.loads(buffer)
 
     @abc.abstractclassmethod
@@ -295,21 +301,26 @@ class CurateTask(ForceableTask, DapsTaskMixin):
         """
         pass
 
-    def insert_data(self, data):
+    def insert_data(self, data, pks=set()):
         with db_session(database=self.db_name) as session:
             # Create the table if it doesn't already exist
             engine = session.get_bind()
             Base = get_declarative_base(self.orm)
             Base.metadata.create_all(engine)
             # Insert the data
-            insert_data(data, self.orm, session, low_memory=self.low_memory)
+            pks = insert_data(
+                data, self.orm, session, low_memory=self.low_memory, pks=pks
+            )
+        return pks
 
     def run(self):
         s3path = self.input().open("r").read()
         data = self.curate_data(s3path)
         if isgeneratorfunction(self.curate_data):
+            pks = set()
             for chunk in data:
-                self.insert_data(chunk)
+                pks = self.insert_data(chunk, pks=pks)
+                print("-->", len(pks))
         else:
             self.insert_data(data)
         return self.output().touch()
