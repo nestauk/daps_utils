@@ -4,8 +4,7 @@ from sqlalchemy import create_engine
 from sqlalchemy.engine.url import URL
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy.exc import OperationalError, NoInspectionAvailable
-from sqlalchemy.sql import exists as sql_exists
-from sqlalchemy import inspect, and_
+from sqlalchemy import inspect
 
 from cachetools import cached
 from cachetools.keys import hashkey
@@ -16,23 +15,6 @@ from .parse_caller import get_main_caller_pkg
 
 CALLER_PKG = get_main_caller_pkg(_inspect.currentframe())
 CHUNKSIZE = 10000
-
-
-def exists(_class, **kwargs):
-    """Generate a sqlalchemy.exists statement for a generic ORM
-    based on the primary keys of that ORM.
-
-    Args:
-         _class (:obj:`sqlalchemy.Base`): A sqlalchemy ORM
-         **kwargs (dict): A row of data containing the primary key fields and values.
-    Returns:
-         :code:`sqlalchemy.exists` statement.
-    """
-    statements = [
-        getattr(_class, pkey.name) == kwargs[pkey.name]
-        for pkey in _class.__table__.primary_key.columns
-    ]
-    return sql_exists().where(and_(*statements))
 
 
 def object_as_dict(obj):
