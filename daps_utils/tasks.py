@@ -320,7 +320,6 @@ class CurateTask(ForceableTask, DapsTaskMixin):
             pks = set()
             for chunk in data:
                 pks = self.insert_data(chunk, pks=pks)
-                print("-->", len(pks))
         else:
             self.insert_data(data)
         return self.output().touch()
