@@ -19,7 +19,7 @@ function _AssertFirstInit(){
 }
 
 function _EnsureShebang(){
-    if [ $(head -c 2 "$1") = "#!" ]; then
+    if [[ $(head -c 2 "$1") = "#!" ]]; then
         echo 'shebang already present'
     else
         echo 'prepending shebang'
@@ -43,9 +43,9 @@ function AddCalVerHook(){
     echo 'function incrementVersion {' >> .githooks/pre-commit
     echo '    CALVER=$(date +"%y.%m.%d")' >> .githooks/pre-commit
     echo '    CURRENT_BRANCH=$(git rev-parse --abbrev-ref HEAD)' >> .githooks/pre-commit
-    echo '    PROJECT_ROOT=${PWD##*/}' >> .githooks/pre-commit
-    echo '    echo -n $CALVER.$CURRENT_BRANCH > ${PROJECT_ROOT}/VERSION' >> .githooks/pre-commit
-    echo '    git add ${PROJECT_ROOT}/VERSION' >> .githooks/pre-commit
+    echo '    PROJECT_NAME='"$1" >> .githooks/pre-commit
+    echo '    echo -n $CALVER.$CURRENT_BRANCH > ${PROJECT_NAME}/VERSION' >> .githooks/pre-commit
+    echo '    git add ${PROJECT_NAME}/VERSION' >> .githooks/pre-commit
     echo '}' >> .githooks/pre-commit
     echo 'incrementVersion' >> .githooks/pre-commit
     echo '################################################################' >> .githooks/pre-commit
@@ -55,7 +55,7 @@ function AddVersionMergeDriver(){
     # reference driver in .gitattributes
     _AssertFirstInit ".gitattributes"
     _AddHeader ".gitattributes"
-    echo "${PWD##*/}"/VERSION merge=always-ours >> .gitattributes
+    echo "$1"/VERSION merge=always-ours >> .gitattributes
     echo '################################################################' >> .gitattributes
     # define driver in .gitconfig
     _AssertFirstInit ".gitconfig"
@@ -74,7 +74,7 @@ function AddInstallFile(){
     echo 'set -e' >> install.sh        
     echo 'chmod +x .githooks/pre-commit' >> install.sh
     echo 'bash .githooks/pre-commit' >> install.sh
-    echo 'ln -sf $PWD/.githooks/pre-commit .git/hooks/pre-commit' >> install.sh
+    echo ln -sf "$1"/.githooks/pre-commit .git/hooks/pre-commit >> install.sh
     echo 'git config --local include.path ../.gitconfig' >> install.sh
     echo 'echo install.sh completed successfully' >> install.sh
     echo '################################################################' >> install.sh
@@ -98,11 +98,11 @@ if [ -z "$(git rev-list -n 1 --all)" ]; then
     exit 1
 fi
 
-# create subdir by the same name (e.g., ojd_daps/ojd_daps)
+calver_dir=$( cd -- "$( dirname -- "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )
+project_name=$("$calver_dir"/project_name.py .)
 # (this is where VERSION will live)
-mkdir -p "${PWD##*/}"
-
-AddCalVerHook
-AddVersionMergeDriver
-AddInstallFile
-echo "You can now inspect your Calendar Version from ${PWD##*/}/VERSION"
+mkdir -p "$project_name"
+AddCalVerHook "$project_name"
+AddVersionMergeDriver "$project_name"
+AddInstallFile "$project_name"
+echo You can now inspect your Calendar Version from "$project_name"/VERSION
