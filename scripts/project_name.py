@@ -21,7 +21,8 @@ def _parent_dir(input_path):
 def _cli(input_str):
     input_path = _parent_dir(pathlib.Path(input_str).resolve())
     # one could have other places to look perhaps
-    if (toml_path := input_path / "pyproject.toml").exists():
+    toml_path = input_path / "pyproject.toml"
+    if toml_path.exists():
         # let's try to pull the name out of toml
         import toml
 
