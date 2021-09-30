@@ -74,7 +74,7 @@ function AddInstallFile(){
     echo 'set -e' >> install.sh        
     echo 'chmod +x .githooks/pre-commit' >> install.sh
     echo 'bash .githooks/pre-commit' >> install.sh
-    echo ln -sf "$PWD"/.githooks/pre-commit "$PWD"/.git/hooks/pre-commit >> install.sh
+    echo 'ln -sf "$PWD"/.githooks/pre-commit "$PWD"/.git/hooks/pre-commit' >> install.sh
     echo 'git config --local include.path ../.gitconfig' >> install.sh
     echo 'echo install.sh completed successfully' >> install.sh
     echo '################################################################' >> install.sh

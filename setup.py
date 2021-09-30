@@ -42,6 +42,7 @@ setup(
         "scripts/metaflowtask-init",
         "scripts/calver-init",
         "scripts/project_name.py",
+        "scripts/test_project_name.sh",
     ],
     **common_kwargs,
 )
