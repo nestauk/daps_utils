@@ -15,7 +15,7 @@ _FirstBranch() {
     git add testfile
     git commit -m "first commit"
     echo RUNNING CALVER-INIT
-    ../calver-init
+    calver-init
     git add install.sh .githooks/pre-commit .gitconfig .gitattributes
     git commit -m "calver init run"
     git checkout -b testbranch
