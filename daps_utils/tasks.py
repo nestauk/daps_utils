@@ -45,8 +45,9 @@ def assert_hasattr(pkg, attr, pkg_name):
 
 
 @retry(stop=stop_after_attempt(10), wait=wait_fixed(3) + wait_random(0, 2))
-def read_body(obj):
-    buffer = obj.get()["Body"].read().decode("utf-8")
+def read_body(s3_obj):
+    """Read and decode S3 object, with retrying."""
+    buffer = s3_obj.get()["Body"].read().decode("utf-8")
     return buffer
 
 
