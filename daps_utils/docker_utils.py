@@ -307,6 +307,15 @@ def run_image(img, **kwargs):
     return logs
 
 
+def docker_prune():
+    """Remove non-running containers and dangling volumes"""
+    dkr = docker.DockerClient(base_url="unix://var/run/docker.sock")
+    for container in dkr.containers.list(filters={"status": "exited"}):
+        container.remove()
+    for volume in dkr.volumes.list(filters={"dangling": True}):
+        volume.remove()
+
+
 def build_and_run_image(
     pkg,
     flow_path,
@@ -328,8 +337,10 @@ def build_and_run_image(
         rebuild_flow (bool): rebuild the flow image?
         kwargs: All other keyword arguments to pass to docker.containers.create
     """
+    docker_prune()
     flow_tag = build_flow_image(
         pkg, flow_path, rebuild_base, rebuild_flow, flow_kwargs, preflow_kwargs
     )
     logs = run_image(flow_tag, **kwargs)
+    docker_prune()
     return logs, flow_tag
