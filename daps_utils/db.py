@@ -1,17 +1,21 @@
 from importlib import import_module
 from contextlib import contextmanager
-from sqlalchemy import create_engine
+from sqlalchemy import create_engine, inspect
+from sqlalchemy import exists as _exists
 from sqlalchemy.engine.url import URL
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy.exc import OperationalError, NoInspectionAvailable
-from sqlalchemy import inspect
+from sqlalchemy.sql.expression import and_
 
+from cachetools import cached
+from cachetools.keys import hashkey
 import logging
 import time
 import inspect as _inspect  # to avoid namespace clash with sqlalchemy
 from .parse_caller import get_main_caller_pkg
 
 CALLER_PKG = get_main_caller_pkg(_inspect.currentframe())
+CHUNKSIZE = 10000
 
 
 def object_as_dict(obj):
@@ -47,7 +51,44 @@ def cast_as_sql_python_type(field, data):
     return _data
 
 
-def filter_out_duplicates(data, model, session, low_memory=True):
+# Only cache on the model, not the session
+@cached(cache={}, key=lambda session, model: hashkey(model))
+def read_pks(session, model):
+    """
+    Read the primary keys from the database for this model. The
+    result is cached per model, regardless of the session.
+    """
+    pkey_cols = model.__table__.primary_key.columns
+    fields = [getattr(model, pkey.name) for pkey in pkey_cols]
+    all_pks = set()
+    n_chunks = 0
+    while "reading":
+        pks = set(session.query(*fields).limit(CHUNKSIZE).offset(n_chunks * CHUNKSIZE))
+        if not pks:
+            break
+        all_pks = all_pks.union(pks)
+        n_chunks += 1
+    return all_pks
+
+
+def exists(model, row):
+    """Generate a sqlalchemy.exists statement for a generic ORM
+    based on the primary keys of that ORM.
+
+    Args:
+         mode (sqlalchemy.Base): A sqlalchemy ORM
+         row (dict): A row of data containing the primary key fields and values.
+    Returns:
+         A sqlalchemy.exists statement.
+    """
+    statements = [
+        getattr(model, pkey.name) == row[pkey.name]
+        for pkey in model.__table__.primary_key.columns
+    ]
+    return _exists().where(and_(*statements))
+
+
+def filter_out_duplicates(data, model, session, low_memory=True, all_pks=set()):
     """Produce a filtered list of data, exluding duplicates and entries that
     already exist in the data.
 
@@ -59,16 +100,16 @@ def filter_out_duplicates(data, model, session, low_memory=True):
                            occupy lots of memory) then set this to True.
                            This will speed things up significantly (like x 100),
                            but will blow up for heavy pkeys or large tables.
+        all_pks (set): Primary keys that have already been processed in this runtime.
     Returns:
         :obj:`list` of :obj:`model` instantiated by data, with dupe pks rm'd.
+        :obj:`set` of :obj:`int` list of all known pks, both in and out of the DB.
     """
-    # Read all pks if in low_memory mode
-    all_pks = set()
+    # Read all pks if in low_memory mode and they haven't already been provided
     pkey_cols = model.__table__.primary_key.columns
     is_auto_pkey = all(p.autoincrement and p.type.python_type is int for p in pkey_cols)
-    if low_memory and not is_auto_pkey:
-        fields = [getattr(model, pkey.name) for pkey in pkey_cols]
-        all_pks = set(session.query(*fields).all())
+    if (low_memory and not is_auto_pkey) and len(all_pks) == 0:
+        all_pks = read_pks(session, model)
 
     objs = []
     for irow, row in enumerate(data):
@@ -91,14 +132,14 @@ def filter_out_duplicates(data, model, session, low_memory=True):
         if (
             not is_auto_pkey
             and not low_memory
-            and session.query(exists(model, **row)).scalar()
+            and session.query(exists(model, row)).scalar()
         ):
             continue
         objs.append(model(**row))
-    return objs
+    return objs, all_pks
 
 
-def insert_data(data, model, session, low_memory=True):
+def insert_data(data, model, session, low_memory=True, pks=set()):
     """
     Convenience method for getting the MySQL engine and inserting
     data into the DB whilst ensuring a good connection is obtained
@@ -110,15 +151,16 @@ def insert_data(data, model, session, low_memory=True):
         low_memory (bool): To speed things up significantly, you can read
                            all pkeys into memory first, but this will blow
                            up for heavy pkeys or large tables.
+        pks (set): Set of primary keys that have already been processed.
 
     Returns:
-        :obj:`list` of :obj:`model` instantiated by data, with dupe pks rm'd.
+        :obj:`set` of :obj:`int` list of all known pks, both in and out of the DB.
     """
-    objs = filter_out_duplicates(
-        data=data, model=model, session=session, low_memory=low_memory
+    objs, pks = filter_out_duplicates(
+        data=data, model=model, session=session, low_memory=low_memory, all_pks=pks
     )
     session.bulk_save_objects(objs)
-    return objs
+    return pks
 
 
 def try_until_allowed(f, *args, **kwargs):
