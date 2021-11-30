@@ -12,7 +12,7 @@ The breadcrumb can then be picked up from the Docker logs
 via a regex. Hacky, but effective!
 """
 
-from metaflow import step, S3
+from metaflow import S3
 import re
 
 BREADCRUMB = "===>>> {} <<<==="
@@ -22,32 +22,32 @@ class BreadCrumbError(Exception):
     pass
 
 
-def _drop_breadcrumb(func):
+def drop(func):
+    """Decorator on a Flow.start step, forcing a breadcrumb drop."""
+
     def wrapper(self, *args, **kwargs):
         with S3(run=self) as s3:
             print(BREADCRUMB.format(s3._s3root))
         func(self, *args, **kwargs)
+
     return wrapper
-
-
-def drop_breadcrumb(flow):
-    """Decorator on a Flow to force the "start" step
-    to drop the breadcrumb."""
-    flow.start = step(_drop_breadcrumb(flow.start))
-    return flow
 
 
 def pickup_breadcrumb(logs):
     """Pick up the breadcrumb via a regex of the logs"""
-    pattern = BREADCRUMB.format('(.*)')
+    pattern = BREADCRUMB.format("(.*)")
     results = re.findall(pattern, logs)
     if len(results) == 0:
-        raise BreadCrumbError("Could not find the Flow's S3 root URL. "
-                              "Did you forget to decorate your Flow with "
-                              "'@drop_breadcrumb'?")
+        raise BreadCrumbError(
+            "Could not find the Flow's S3 root URL. "
+            "Did you forget to decorate your Flow with "
+            "'@drop_breadcrumb'?"
+        )
     elif len(results) > 1:
-        raise BreadCrumbError("Found multiple instances of the pattent "
-                              f"'{BREADCRUMB}'. Do not include this pattern "
-                              "in your output: it is reserved for "
-                              "breadcrumbs.")
+        raise BreadCrumbError(
+            "Found multiple instances of the pattern "
+            f"'{BREADCRUMB}'. Do not include this pattern "
+            "in your output: it is reserved for "
+            "breadcrumbs."
+        )
     return results[0]
