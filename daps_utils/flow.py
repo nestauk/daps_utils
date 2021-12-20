@@ -5,10 +5,7 @@ flow
 Common DAPS flow mixins.
 """
 import sys
-from io import StringIO
-from metaflow import Parameter, S3, step
-from types import SimpleNamespace
-from configparser import ConfigParser
+from metaflow import Parameter, step
 from . import db
 from . import breadcrumbs
 
@@ -47,7 +44,6 @@ class DapsFlowMixin:
         cls.start = step(breadcrumbs.drop(cls.start))
         if db.CALLER_PKG is None:
             raise ValueError("CALLER PKG not found")
-        # cls._stash_sql_config()
 
     @property
     def test(self):
@@ -70,32 +66,4 @@ class DapsFlowMixin:
         """
         if database is None:
             database = self.db_name
-        # if db.CALLER_PKG is None:
-        #     self._mock_caller_pkg()
         return db.db_session(database=database)
-
-    # def _stash_sql_config(self):
-    #     """Stash the sql config file on S3 for later"""
-    #     # Extract the sql config, formatted as .INI
-    #     with StringIO() as sio:
-    #         db.CALLER_PKG.config["mysqldb"].write(sio)  # formats as .INI
-    #         data = sio.getvalue()
-    #     # Stash the sql config file on S3
-    #     with S3(run=self) as s3:
-    #         s3.put(SQL_CONFIG, data)
-
-    # def _mock_caller_pkg(self):
-    #     """
-    #     Retrieve the stashed sql config file and assign it to
-    #     db.CALLER_PKG.config. In order to do this, db.CALLER_PKG must
-    #     be mocked out as e.g. SimpleNamespace() so that setattr
-    #     can be called.
-    #     """
-    #     with S3(run=self) as s3:
-    #         data = s3.get(SQL_CONFIG).text
-    #     # Read in the config
-    #     config = ConfigParser()
-    #     config.read_string(data)
-    #     # Mock assign the config (formatted as per __initplus__)
-    #     # to a dummy caller package in the daps_utils.db namespace
-    #     db.CALLER_PKG = SimpleNamespace(config={"mysqldb": config})
