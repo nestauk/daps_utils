@@ -5,11 +5,9 @@ flow
 Common DAPS flow mixins.
 """
 import sys
-from io import StringIO
-from metaflow import Parameter, S3
-from types import SimpleNamespace
-from configparser import ConfigParser
+from metaflow import Parameter, step
 from . import db
+from . import breadcrumbs
 
 """A dummy name for stashing the SQL config on S3"""
 SQL_CONFIG = "sql_config"
@@ -40,6 +38,13 @@ class DapsFlowMixin:
 
     production = Parameter("production", help="Run in production mode?", default=False)
 
+    def __init_subclass__(cls, **kwargs):
+        """Overload the 'start' step to drop the breadcrumb & stash the sql config."""
+        super().__init_subclass__(**kwargs)
+        cls.start = step(breadcrumbs.drop(cls.start))
+        if db.CALLER_PKG is None:
+            raise ValueError("CALLER PKG not found")
+
     @property
     def test(self):
         """Opposite of production"""
@@ -61,37 +66,4 @@ class DapsFlowMixin:
         """
         if database is None:
             database = self.db_name
-        if db.CALLER_PKG is None:
-            self._mock_caller_pkg()
         return db.db_session(database=database)
-
-    def set_caller_pkg(self, pkg):
-        """Set db.CALLER_PKG and stash the sql config file on S3 for later"""
-        db.CALLER_PKG = pkg
-        self._stash_sql_config()
-
-    def _stash_sql_config(self):
-        """Stash the sql config file on S3 for later"""
-        # Extract the sql config, formatted as .INI
-        with StringIO() as sio:
-            db.CALLER_PKG.config["mysqldb"].write(sio)  # formats as .INI
-            data = sio.getvalue()
-        # Stash the sql config file on S3
-        with S3(run=self) as s3:
-            s3.put(SQL_CONFIG, data)
-
-    def _mock_caller_pkg(self):
-        """
-        Retrieve the stashed sql config file and assign it to
-        db.CALLER_PKG.config. In order to do this, db.CALLER_PKG must
-        be mocked out as e.g. SimpleNamespace() so that setattr
-        can be called.
-        """
-        with S3(run=self) as s3:
-            data = s3.get(SQL_CONFIG).text
-        # Read in the config
-        config = ConfigParser()
-        config.read_string(data)
-        # Mock assign the config (formatted as per __initplus__)
-        # to a dummy caller package in the daps_utils.db namespace
-        db.CALLER_PKG = SimpleNamespace(config={"mysqldb": config})

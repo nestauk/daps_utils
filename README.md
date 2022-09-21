@@ -126,21 +126,20 @@ locally with:
 python s3_example.py run
 ```
 
-Look inside `s3_example.py` and note the usage of the `@talk_to_luigi` class decorator. This is critical for your
+Look inside `s3_example.py` and note the usage of the `DapsFlowMixin` class mixin. This is critical for your
 `metaflow` flow to talk with your `luigi` task:
 
 ```python
-from daps_utils import talk_to_luigi
+from daps_utils import DapsFlowMixin
 
-@talk_to_luigi
-class MyFlow(FlowSpec):
+class MyFlow(FlowSpec, DapsFlowMixin):
     [...]  # Do something
 ```
 
 
 There are only a small number of requirements for your flow to run via `MetaflowTask`:
 
-- Firstly, make sure you are using the `@talk_to_luigi` class decorator on your flow.
+- Firstly, make sure you are using the `DapsFlowMixin` class mixin with your flow.
 - If your flow has any external dependencies, you will need to include a `requirements.txt` in your flow directory to specify the python environment.
 - If your flow will not run out-of-the-box on Amazon Linux 2, then you'll need to specify your container environment. Take a look at the `docker` environment in `config/metaflowtask` (the base environment is built by `Dockerfile-base`, which is then built on-top-of using `Dockerfile`). If you need your own base environment you should include a `Dockerfile-base` in the flow directory (and also a `Dockerfile`), or just a slight variation you should just include a `Dockerfile` in your flow directory.
 - Similarly, if you need the entrypoint / runtime to be more sophisticated than `python path/to/flow.py run`, you can specify custom behaviour by copying and editing the `config/metaflowtask/launch.sh` script to your flow directory.
@@ -162,7 +161,7 @@ flows
 	├── Dockerfile        # <-- Can specify this on it's own, if you're happy with "Dockerfile-base"
 	├── launch.sh         # <-- Can specify this on it's own, if you're happy with "Dockerfile"
 	├── requirements.txt  # <-- Only required if you have external python dependencies
-	└── my_flow.py        # <-- You always need this, this is your flow. Don't forget to use the @talk_to_luigi class decorator
+	└── my_flow.py        # <-- You always need this, this is your flow. Don't forget to use the `DapsFlowMixin` class mixin
 ```
 
 You can then run add your "`luigi`" `MetaflowTask` as follows:
